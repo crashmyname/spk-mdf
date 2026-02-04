@@ -1,0 +1,4 @@
+/logs/error.log
+.env
+/storage/public
+/storage/session

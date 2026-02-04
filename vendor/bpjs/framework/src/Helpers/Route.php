@@ -1,0 +1,351 @@
+<?php
+namespace Bpjs\Framework\Helpers;
+
+use Bpjs\Core\Request;
+use Helpers\View;
+use Middlewares\SessionMiddleware;
+
+class Route
+{
+    private static $routes = [];
+    private static $names = [];
+    private static $prefix;
+    private static $groupMiddlewares = []; 
+    private static $lastRouteMethod = null;
+    private static $lastRouteUri = null;
+
+    public static function init($prefix = '')
+    {
+        self::$routes['GET'] = [];
+        self::$routes['POST'] = [];
+        self::$routes['PUT'] = [];
+        self::$routes['DELETE'] = [];
+        self::$prefix = rtrim($prefix, '/');
+    }
+
+    public static function get($uri, $handler, $middlewares = [])
+    {
+        $middlewares = array_merge(self::$groupMiddlewares, $middlewares);
+        self::$routes['GET'][$uri] = [
+            'handler' => $handler,
+            'middlewares' => $middlewares,
+        ];
+
+        self::$lastRouteMethod = 'GET';
+        self::$lastRouteUri = $uri;
+
+        return new self();
+    }
+
+    public static function post($uri, $handler, $middlewares = [])
+    {
+        $middlewares = array_merge(self::$groupMiddlewares, $middlewares);
+        self::$routes['POST'][$uri] = [
+            'handler' => $handler,
+            'middlewares' => $middlewares,
+        ];
+        self::$lastRouteMethod = 'POST';
+        self::$lastRouteUri = $uri;
+        return new self();
+    }
+
+    public static function put($uri, $handler, $middlewares = [])
+    {
+        $middlewares = array_merge(self::$groupMiddlewares, $middlewares);
+        self::$routes['PUT'][$uri] = [
+            'handler' => $handler,
+            'middlewares' => $middlewares,
+        ];
+        self::$lastRouteMethod = 'PUT';
+        self::$lastRouteUri = $uri;
+        return new self();
+    }
+
+    public static function delete($uri, $handler, $middlewares = [])
+    {
+        $middlewares = array_merge(self::$groupMiddlewares, $middlewares);
+        self::$routes['DELETE'][$uri] = [
+            'handler' => $handler,
+            'middlewares' => $middlewares,
+        ];
+        self::$lastRouteMethod = 'DELETE';
+        self::$lastRouteUri = $uri;
+        return new self();
+    }
+
+    public static function group(array $middlewares, \Closure $routes)
+    {
+        self::$groupMiddlewares = $middlewares;
+        call_user_func($routes);
+        self::$groupMiddlewares = [];
+    }
+
+    public static function name($name)
+    {
+        if (self::$lastRouteMethod && self::$lastRouteUri) {
+            self::$names[$name] = self::$lastRouteUri;
+            error_log("✅ Route name '{$name}' mapped to URI '" . self::$lastRouteUri . "'");
+            return new self();
+        }
+
+        if (env('APP_DEBUG') == 'false') {
+            if (Request::isAjax() || (isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false)) {
+                header('Content-Type: application/json', true, 500);
+                echo json_encode([
+                    'statusCode' => 500,
+                    'error'      => 'Internal Server Error'
+                ]);
+            } else {
+                return View::error(500);
+            }
+            exit;
+        }
+
+        ErrorHandler::handleException($name);
+    }
+
+    public static function prefix(string $prefix, \Closure $routes)
+    {
+        $previousPrefix = self::$prefix;
+        self::$prefix = rtrim($previousPrefix . '/' . trim($prefix, '/'), '/');
+        call_user_func($routes);
+        self::$prefix = $previousPrefix;
+    }
+
+    public static function route($name, $params = [])
+    {
+        if (isset(self::$names[$name])) {
+            $uri = self::$names[$name];
+
+            foreach ($params as $key => $value) {
+                $uri = str_replace('{' . $key . '}', $value, $uri);
+            }
+
+            $baseUrl = rtrim(env('APP_URL', ''), '/');
+
+            return $baseUrl . '/' . trim($uri, '/');
+        }
+
+        if (env('APP_DEBUG') == 'false') {
+            if (Request::isAjax() || (isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false)) {
+                header('Content-Type: application/json', true, 500);
+                echo json_encode([
+                    'statusCode' => 500,
+                    'error'      => 'Internal Server Error'
+                ]);
+            } else {
+                return View::error(500);
+            }
+            exit;
+        }
+
+        self::renderErrorPage("Route dengan nama '{$name}' tidak ditemukan.");
+    }
+
+    public function limit(int $maxRequests)
+    {
+        $method = self::$lastRouteMethod;
+        $uri = self::$lastRouteUri;
+
+        if (!$method || !$uri) {
+            throw new \Exception("No route context available for applying limit().");
+        }
+
+        $limitMiddleware = function ($request) use ($maxRequests) {
+            $request->setRateLimit($maxRequests);
+            (new \Middlewares\LimitRequests())->handle($request);
+        };
+
+        self::$routes[$method][$uri]['middlewares'][] = $limitMiddleware;
+
+        return $this;
+    }
+
+    public static function dispatch(): \Bpjs\Core\Response
+    {
+        try {
+            SessionMiddleware::start();
+
+            $method = $_SERVER['REQUEST_METHOD'];
+            if ($method === 'POST' && isset($_POST['_method'])) {
+                $method = strtoupper($_POST['_method']);
+            }
+
+            $uri = strtok($_SERVER['REQUEST_URI'], '?');
+            if (self::$prefix && strpos($uri, self::$prefix) === 0) {
+                $uri = substr($uri, strlen(self::$prefix));
+            }
+            $uri = '/' . ltrim($uri, '/');
+            if ($uri === '') $uri = '/';
+
+
+            $route = self::findRoute($method, $uri);
+
+            if ($route) {
+                $handler = $route['handler'];
+                $middlewares = $route['middlewares'];
+                $params = $route['params'] ?? [];
+
+                $request = new \Bpjs\Core\Request();
+
+                foreach ($middlewares as $middleware) {
+                    if (is_string($middleware)) {
+                        $middlewareInstance = new $middleware();
+                        if (method_exists($middlewareInstance, 'handle')) {
+                            $middlewareInstance->handle($request);
+                        }
+                    } elseif (is_callable($middleware)) {
+                        $middleware($request);
+                    }
+                }
+
+                if ($method === 'POST') {
+                    $csrfToken = $request->get('csrf_token') ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? null;
+                    if (empty($csrfToken) || !isset($_SESSION['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $csrfToken)) {
+                        return new \Bpjs\Core\Response('Invalid CSRF Token', 419);
+                    }
+                }
+
+                if (is_array($handler) && count($handler) === 2) {
+                    [$controller, $method] = $handler;
+                    $container = new \Bpjs\Core\Container();
+                    $controllerInstance = $container->make($controller);
+
+                    $reflection = new \ReflectionMethod($controllerInstance, $method);
+                    $methodParams = [];
+
+                    foreach ($reflection->getParameters() as $param) {
+                        $type = $param->getType();
+
+                        if ($type) {
+                            $className = $type->getName();
+
+                            if ($className === \Bpjs\Core\Request::class) {
+                                $methodParams[] = $request;
+                            } else {
+                                $methodParams[] = $container->make($className);
+                            }
+                        } else {
+                            $methodParams[] = array_shift($params);
+                        }
+                    }
+
+                    $result = $reflection->invokeArgs($controllerInstance, $methodParams);
+                } else {
+                    $result = call_user_func_array($handler, $params);
+                }
+
+                if ($result instanceof \Bpjs\Core\Response) {
+                    return $result;
+                }
+
+                return new \Bpjs\Core\Response($result);
+            }
+
+            ob_start();
+            include BPJS_BASE_PATH . '/app/handle/errors/404.php';
+            $content = ob_get_clean();
+            return new \Bpjs\Core\Response($content, 404);
+
+        } catch (\Throwable $e) {
+            if (env('APP_DEBUG') === 'true') {
+                throw $e;
+            }
+
+            if (
+                Request::isAjax() ||
+                (isset($_SERVER['HTTP_ACCEPT']) && str_contains($_SERVER['HTTP_ACCEPT'], 'application/json'))
+            ) {
+                return new \Bpjs\Core\Response(
+                    json_encode([
+                        'statusCode' => 500,
+                        'error' => 'Internal Server Error'
+                    ]),
+                    500,
+                    ['Content-Type' => 'application/json']
+                );
+            }
+
+            return View::error(500);
+        }
+    }
+
+    private static function findRoute($method, $uri)
+    {
+        foreach (self::$routes[$method] as $routeUri => $route) {
+            $routePattern = preg_replace('/\{[a-zA-Z0-9_]+\}/', '([a-zA-Z0-9_\-]+)', $routeUri);
+            if (preg_match('#^' . $routePattern . '$#', $uri, $matches)) {
+                array_shift($matches);
+                $route['params'] = $matches;
+                return $route;
+            }
+        }
+        return null;
+    }
+
+    private static function routeExists($uri)
+    {
+        return isset(self::$routes['GET'][$uri]) || isset(self::$routes['POST'][$uri]);
+    }
+
+    private static function renderErrorPage($message)
+    {
+        ob_clean();
+        header('Content-Type: text/html; charset=utf-8');
+        $url = base_url();
+        echo "
+        <!DOCTYPE html>
+        <html lang='en'>
+        <head>
+            <meta charset='UTF-8'>
+            <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+            <title>Error</title>
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
+                    background-color: #f4f4f9;
+                    color: #333;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    height: 100vh;
+                    margin: 0;
+                }
+                .error-container {
+                    background-color: #fff;
+                    border: 1px solid #ddd;
+                    border-radius: 8px;
+                    padding: 20px;
+                    max-width: 600px;
+                    width: 100%;
+                    text-align: center;
+                }
+                h1 {
+                    color: #e74c3c;
+                    font-size: 2em;
+                }
+                p {
+                    font-size: 1.2em;
+                    margin: 15px 0;
+                }
+                a {
+                    color: #3498db;
+                    text-decoration: none;
+                }
+                a:hover {
+                    text-decoration: underline;
+                }
+            </style>
+        </head>
+        <body>
+            <div class='error-container'>
+                <h1>Error: {$message}</h1>
+                <p>Something went wrong while processing the request.</p>
+                <p><a href='{$url}'>Return to Home</a></p>
+            </div>
+        </body>
+        </html>
+    ";
+        exit();
+    }
+}
