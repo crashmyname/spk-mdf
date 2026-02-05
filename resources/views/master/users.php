@@ -2,7 +2,7 @@
         <div class="row row-cards">
             <div class="col-12">
                 <div class="card-header">
-                    <h4 class="card-title">Menu User</h4>
+                    <h4 class="card-title"><?= $title?></h4>
                 </div>
                 <div class="card-body">
                     <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modal-user">

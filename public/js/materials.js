@@ -2,16 +2,15 @@
             const btn = e.target.closest('[data-bs-target="#modalEdit"]');
             if (!btn) return;
 
-            const user = JSON.parse(btn.dataset.user);
+            const material = JSON.parse(btn.dataset.material);
 
-            document.getElementById('uusername').value = user.username ?? '';
-            document.getElementById('uname').value = user.name ?? '';
-            document.getElementById('uemail').value = user.email ?? '';
-            document.getElementById('usection').value = user.section ?? '';
-            document.getElementById('urole').value = user.role ?? '';
+            document.getElementById('umold_number').value = material.mold_number ?? '';
+            document.getElementById('umodel_name').value = material.model_name ?? '';
+            document.getElementById('ulamp_name').value = material.lamp_name ?? '';
+            document.getElementById('utype_material').value = material.type_material ?? '';
         });
         const table = new TablePlus({
-            url : getUser,
+            url : getMaterial,
             columns : {
                 action : {
                     label : 'Action',
@@ -21,25 +20,24 @@
                             class="btn btn-sm btn-yellow"
                             data-bs-toggle="modal"
                             data-bs-target="#modalEdit"
-                            data-user='${JSON.stringify(row)}'>
+                            data-material='${JSON.stringify(row)}'>
                             Edit
                         </button>
-                        <button type="submit" class="btn btn-sm btn-danger deleteuser" data-user="${row.username}">Delete</button>
+                        <button type="submit" class="btn btn-sm btn-danger deletematerial" data-material="${row.mold_number}">Delete</button>
                         `;
                     },
                     exportText: (row) => {
                         return 'Edit / Hapus'
                     }
                 },
-                username : 'NIK',
-                name : 'Name',
-                section : 'Section',
-                email : 'Email',
-                role : 'Role',
+                mold_number : 'Mold Number',
+                model_name : 'Model Name',
+                lamp_name : 'Lamp Name',
+                type_material : 'Type',
             },
             perPage: 10,
             perPageOptions: [10,20,50,100],
-            rowIdentifier: 'username',
+            rowIdentifier: 'mold_number',
             // customActions: [
             //     {
             //         label: '✓ Tandai Dibaca',
@@ -61,42 +59,22 @@
             // },
             savePreferences: true
         })
-        table.render('#userTable')
+        table.render('#materialTable')
 $(document).ready(function(){
     crud()
-    $('#username').on('change', function(e){
-        e.preventDefault()
-        $.ajax({
-            url : urlEmp,
-            type: 'POST',
-            data : {
-                nik : $(this).val()
-            },
-            headers : {
-                'X-CSRF-TOKEN' : csrfToken
-            },
-            success: function(response){
-                if(response.status === 200) {
-                    $('#name').val(response.data.nama)
-                    $('#section').val(response.data.kode_section)
-                    $('#email').val(response.data.work_email)
-                }
-            }
-        })
-    })
 })
 
 function crud()
 {
-    $('#adduser').on('click', function(e){
+    $('#addmaterial').on('click', function(e){
         e.preventDefault()
-        var form = new FormData($('#formadduser')[0])
-        const btnAdd = $('#adduser')
+        var form = new FormData($('#formaddmaterial')[0])
+        const btnAdd = $('#addmaterial')
         const btnLoading = $('#loading')
         btnAdd.hide()
         btnLoading.show()
         $.ajax({
-            url : createUser,
+            url : createMaterial,
             type: 'POST',
             data : form,
             processData: false,
@@ -156,15 +134,15 @@ function crud()
             }
         })
     })
-    $('#edituser').on('click', function(e){
+    $('#editmaterial').on('click', function(e){
         e.preventDefault()
-        var form = new FormData($('#formedituser')[0])
-        const btnAdd = $('#edituser')
+        var form = new FormData($('#formeditmaterial')[0])
+        const btnAdd = $('#editmaterial')
         const btnLoading = $('#loadingedit')
         btnAdd.hide()
         btnLoading.show()
         $.ajax({
-            url : editUser +'/'+ $('#uusername').val(),
+            url : editMaterial +'/'+ $('#umold_number').val(),
             type: 'POST',
             data : form,
             processData: false,
@@ -224,9 +202,9 @@ function crud()
             }
         })
     })
-    $(document).on('click','.deleteuser', function(e){
+    $(document).on('click','.deletematerial', function(e){
         e.preventDefault()
-        const username = $(this).data('user');
+        const mold = $(this).data('material');
             Swal.fire({
                 title: 'Delete',
                 icon: 'warning',
@@ -239,7 +217,7 @@ function crud()
                 if (result.isConfirmed) {
                     $.ajax({
                         type: 'DELETE',
-                        url: deleteUser +'/'+ username,
+                        url: deleteMaterial +'/'+ mold,
                         headers: {
                             'X-CSRF-TOKEN': csrfToken
                         },

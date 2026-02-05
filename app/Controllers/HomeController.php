@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 
+use App\Models\Materials;
 use App\Models\User;
 use Bpjs\Framework\Helpers\BaseController;
 use Bpjs\Core\Request;
@@ -16,6 +17,7 @@ class HomeController extends BaseController
     {
         $title = 'Dashboard';
         $user = User::query()->count();
-        return view('home/dashboard',['title' => $title,'user' => $user],'layout/app');
+        $material = Materials::query()->count();
+        return view('home/dashboard',['title' => $title,'user' => $user,'material' => $material],'layout/app');
     }
 }

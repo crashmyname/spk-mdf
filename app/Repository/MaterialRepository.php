@@ -2,6 +2,7 @@
 
 namespace App\Repository;
 
+use App\DTO\Material\MaterialDTO;
 use App\Models\Materials;
 
 class MaterialRepository
@@ -15,13 +16,19 @@ class MaterialRepository
 
     public function createMaterial(array $data)
     {
-        $request = [
-            'mold_number' => $data['mold_number'],
-            'lamp_name' => $data['lamp_name'],
-            'model_name' => $data['model_name'],
-            'type' => $data['type'],
-        ];
-        $material = Materials::create($request);
+        // $attribute = [
+        //     'mold_number' => $data['mold_number'],
+        //     'lamp_name' => $data['lamp_name'],
+        //     'model_name' => $data['model_name'],
+        //     'type_material' => $data['type_material'],
+        // ];
+        $attribute = new MaterialDTO(
+            $data['mold_number'],
+            $data['lamp_name'],
+            $data['model_name'],
+            $data['type_material'],
+        );
+        $material = Materials::create($attribute);
         return $material;
     }
 

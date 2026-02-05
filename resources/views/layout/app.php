@@ -165,7 +165,7 @@ use Bpjs\Framework\Helpers\Session;
                       <a class="dropdown-item" href="<?= route('users')?>">
                         Users
                       </a>
-                      <a class="dropdown-item" href="">
+                      <a class="dropdown-item" href="<?= route('materials')?>">
                         Materials
                       </a>
                     </div>

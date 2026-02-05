@@ -8,10 +8,10 @@ final class MaterialDTO
 {
     // DTO here
     public function __construct(
-        public string $moldNumber,
-        public string $lampName,
-        public string $modelName,
-        public string $type
+        public string $mold_number,
+        public string $lamp_name,
+        public string $model_name,
+        public string $type_material
     ){}
 
     public static function getMaterialDTO(Materials $material)

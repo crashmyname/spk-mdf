@@ -23,12 +23,12 @@ class MaterialController extends BaseController
     public function getMaterial(Request $request)
     {
         return TablePlus::of('material')
-                        ->select('mold_number','lamp_name','model_name','type')
+                        ->select('mold_number','lamp_name','model_name','type_material')
                         ->searchable([
                             'mold_number',
                             'lamp_name',
                             'model_name',
-                            'type'
+                            'type_material'
                         ])
                         ->filters($request->input('filters',[]) ?? [])
                         ->orderBy('material_id','ASC')
@@ -42,7 +42,7 @@ class MaterialController extends BaseController
         // Tampilkan resource dengan ID: $id
     }
 
-    public function store(Request $request, MaterialService $service)
+    public function create(Request $request, MaterialService $service)
     {
         $result = $service->createMaterial($request->all());
         return Response::json([

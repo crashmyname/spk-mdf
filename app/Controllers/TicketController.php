@@ -2,8 +2,10 @@
 
 namespace App\Controllers;
 
+use App\Services\TiketService;
 use Bpjs\Framework\Helpers\BaseController;
 use Bpjs\Core\Request;
+use Bpjs\Framework\Helpers\Response;
 use Bpjs\Framework\Helpers\Validator;
 use Bpjs\Framework\Helpers\View;
 use Bpjs\Framework\Helpers\CSRFToken;
@@ -12,7 +14,8 @@ class TicketController extends BaseController
 {
     public function index()
     {
-        // Tampilkan semua resource
+        $title = 'SPK';
+        return view('ticket/ticket',compact('title'),'layout/app');
     }
 
     public function show($id)
@@ -20,14 +23,24 @@ class TicketController extends BaseController
         // Tampilkan resource dengan ID: $id
     }
 
-    public function store(Request $request)
+    public function store(Request $request, TiketService $service)
     {
-        // Simpan resource baru
+        $result = $service->createTicket($request->all());
+        return Response::json([
+            'status' => $result['status'],
+            'message' => $result['message'] ?? 'success',
+            'data' => $result['data'] ?? null,
+        ],$result['status']);
     }
 
-    public function update(Request $request, $id)
+    public function update(Request $request, $id, TiketService $service)
     {
-        // Update resource dengan ID: $id
+        $result = $service->updateTicket($id,$request->all());
+        return Response::json([
+            'status' => $result['status'],
+            'message' => $result['message'] ?? 'success',
+            'data' => $result['data'] ?? null,
+        ],$result['status']);
     }
 
     public function destroy($id)

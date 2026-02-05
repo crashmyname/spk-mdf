@@ -11,6 +11,14 @@ class MaterialService
     public function __construct(protected MaterialRepository $repo){}
     public function createMaterial(array $data)
     {
+        $validate = $this->validate($data);
+        if($validate){
+            return [
+                'success' => false,
+                'status' => 422,
+                'message' => $validate
+            ];
+        }
         if($this->MoldIsExsist($data['mold_number'])){
             return [
                 'success' => false,
@@ -30,7 +38,13 @@ class MaterialService
 
     public function updateMaterial($id, array $data)
     {
-        $material = $this->repo->updateMaterial($data);
+        $attributes = [
+            'mold_number' => $id,
+            'model_name' => $data['model_name'],
+            'lamp_name' => $data['lamp_name'],
+            'type_material' => $data['type_material'],
+        ];
+        $material = $this->repo->updateMaterial($attributes);
         return [
             'success' => true,
             'status' => 200,
@@ -55,13 +69,13 @@ class MaterialService
             'mold_number' => 'required',
             'lamp_name' => 'required',
             'model_name' => 'required',
-            'type' => 'required',
+            'type_material' => 'required',
         ],
         [
-            'username.required' => 'Username is required',
+            'mold_number.required' => 'Mold number is required',
             'lamp_name.required' => 'Lamp Name is required',
             'model_name.required' => 'Model Name is required',
-            'type.required' => 'Type is required',
+            'type_material.required' => 'Type is required',
         ]
         );
         return $validate;

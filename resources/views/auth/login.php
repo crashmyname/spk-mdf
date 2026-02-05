@@ -69,6 +69,10 @@
                     </div>
                     <div class="form-footer">
                       <button type="submit" id="btnlogin" class="btn btn-primary w-100">Sign in</button>
+                      <button class="btn btn-primary w-100" style="display: none;" id="loading" disabled>
+                            <div class="spinner-border me-2" role="status"></div>
+                            <strong>Loading...</strong>
+                      </button>
                     </div>
                   </form>
                 </div>
@@ -101,7 +105,11 @@
         })
         $(document).ready(function(){
           $('#btnlogin').on('click', function(e){
-              e.preventDefault();
+            e.preventDefault();
+            const btn = $(this)
+            const loading = $('#loading')
+            btn.hide()
+            loading.show()
               var url = '';
               var formdata = new FormData($('#formlogin')[0]);
               $.ajax({
@@ -113,6 +121,8 @@
                   dataType: 'json',
                   success:function(response){
                       if (response.status === 200) {
+                          btn.show()
+                          loading.hide()
                           let timerInterval;
                           Swal.fire({
                               icon: 'success',
@@ -133,6 +143,8 @@
                               window.location.href = "<?= url('') ?>";
                           });
                       } else {
+                          btn.show()
+                          loading.hide()
                           Swal.fire({
                               icon: 'error',
                               title: 'Login Gagal',
@@ -142,6 +154,8 @@
                   },
                   error: function (xhr, status, error) {
                     let response = JSON.parse(xhr.responseText)
+                      btn.show()
+                      loading.hide()
                       Swal.fire({
                           icon: 'error',
                           title: 'Oops...',

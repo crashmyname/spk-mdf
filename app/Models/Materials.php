@@ -7,5 +7,5 @@ class Materials extends BaseModel
 {
     // Model logic here
     public $table = 'material';
-    protected $primaryKey = ['material_id'];
+    protected $primaryKey = 'material_id';
 }

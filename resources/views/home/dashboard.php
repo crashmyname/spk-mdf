@@ -16,10 +16,10 @@
                 <div class="card">
                     <div class="card-body">
                         <div class="d-flex align-items-center">
-                            <div class="subheader">SPK</div>
+                            <div class="subheader">Material</div>
                         </div>
                         <div class="d-flex align-items-baseline">
-                            <div class="h1 mb-0 me-2"></div>
+                            <div class="h1 mb-0 me-2"> <?= $material?></div>
                         </div>
                     </div>
                 </div>
