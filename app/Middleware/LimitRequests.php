@@ -33,11 +33,28 @@ class LimitRequests
             if (($currentTime - $data['start_time']) < $interval) {
                 if ($data['count'] >= $limit) {
                     http_response_code(429);
-                    View::error('429', [
-                        'message'  => 'You`ve exceeded the allowed number of requests. Try again in a moment.',
-                        'limit'   => $limit,
-                        'interval'=> $interval
-                    ]);
+                    if (
+                        Request::isAjax() ||
+                        (isset($_SERVER['HTTP_ACCEPT']) && 
+                        strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false)
+                    ) {
+
+                        \Bpjs\Framework\Helpers\Response::json([
+                            'status' => 429,
+                            'message' => 'You’ve exceeded the allowed number of requests. Try again in a moment.',
+                            'limit' => $limit,
+                            'interval' => $interval
+                        ], 429);
+
+                    } else {
+
+                        View::error('429', [
+                            'message'  => 'You’ve exceeded the allowed number of requests. Try again in a moment.',
+                            'limit'   => $limit,
+                            'interval'=> $interval
+                        ]);
+                    }
+
                     exit();
                 }
 
