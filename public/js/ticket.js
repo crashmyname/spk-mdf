@@ -2,42 +2,55 @@
             const btn = e.target.closest('[data-bs-target="#modalEdit"]');
             if (!btn) return;
 
-            const material = JSON.parse(btn.dataset.material);
+            const user = JSON.parse(btn.dataset.user);
 
-            document.getElementById('umold_number').value = material.mold_number ?? '';
-            document.getElementById('umodel_name').value = material.model_name ?? '';
-            document.getElementById('ulamp_name').value = material.lamp_name ?? '';
-            document.getElementById('utype_material').value = material.type_material ?? '';
+            document.getElementById('uusername').value = user.username ?? '';
+            document.getElementById('uname').value = user.name ?? '';
+            document.getElementById('uemail').value = user.email ?? '';
+            document.getElementById('usection').value = user.section ?? '';
+            document.getElementById('urole').value = user.role ?? '';
         });
         const table = new TablePlus({
-            url : getMaterial,
+            url : getTicket,
             columns : {
-                action : {
+                actions : {
                     label : 'Action',
                     render: (row) => {
                         return `
+                        <a href="${urlDetail+'/'+row.ticket_id}" class="btn btn-sm btn-teal">Process</a>
                         <button
                             class="btn btn-sm btn-yellow"
                             data-bs-toggle="modal"
                             data-bs-target="#modalEdit"
-                            data-material='${JSON.stringify(row)}'>
+                            data-user='${JSON.stringify(row)}'>
                             Edit
                         </button>
-                        <button type="submit" class="btn btn-sm btn-danger deletematerial" data-material="${row.mold_number}">Delete</button>
+                        <button type="submit" class="btn btn-sm btn-danger deleteticket" data-ticket="${row.ticket_id}">Delete</button>
                         `;
                     },
                     exportText: (row) => {
                         return 'Edit / Hapus'
                     }
                 },
-                mold_number : 'Mold Number',
-                model_name : 'Model Name',
-                lamp_name : 'Lamp Name',
-                type_material : 'Type',
+                no_order : 'No Order',
+                date_create : 'Date Create',
+                action : 'THJKL',
+                username : 'NIK',
+                name : 'Name',
+                action : 'action',
+                type_ticket : 'type_ticket',
+                mold_number : 'mold_number',
+                model_name : 'model_name',
+                // lamp_name : 'lamp_name',
+                // type_material : 'type_material',
+                lot_shot : 'lot_shot',
+                total_shot : 'total_shot',
+                sketch_item : 'sketch_item',
+                options : 'options',
             },
             perPage: 10,
             perPageOptions: [10,20,50,100],
-            rowIdentifier: 'mold_number',
+            rowIdentifier: 'ticket_id',
             // customActions: [
             //     {
             //         label: '✓ Tandai Dibaca',
@@ -59,22 +72,28 @@
             // },
             savePreferences: true
         })
-        table.render('#materialTable')
+        table.render('#ticketTable')
 $(document).ready(function(){
     crud()
+    flatpickr("#date_create", {
+        dateFormat: "Y-m-d",
+        locale: "id", 
+        allowInput: true,
+        defaultDate: new Date()
+    });
 })
 
 function crud()
 {
-    $('#addmaterial').on('click', function(e){
+    $('#addticket').on('click', function(e){
         e.preventDefault()
-        var form = new FormData($('#formaddmaterial')[0])
-        const btnAdd = $('#addmaterial')
+        var form = new FormData($('#formaddticket')[0])
+        const btnAdd = $('#addticket')
         const btnLoading = $('#loading')
         btnAdd.hide()
         btnLoading.show()
         $.ajax({
-            url : createMaterial,
+            url : createTicket,
             type: 'POST',
             data : form,
             processData: false,
@@ -134,15 +153,15 @@ function crud()
             }
         })
     })
-    $('#editmaterial').on('click', function(e){
+    $('#editticket').on('click', function(e){
         e.preventDefault()
-        var form = new FormData($('#formeditmaterial')[0])
-        const btnAdd = $('#editmaterial')
+        var form = new FormData($('#formeditticket')[0])
+        const btnAdd = $('#editticket')
         const btnLoading = $('#loadingedit')
         btnAdd.hide()
         btnLoading.show()
         $.ajax({
-            url : editMaterial +'/'+ $('#umold_number').val(),
+            url : editTicket +'/'+ $('#uticket').val(),
             type: 'POST',
             data : form,
             processData: false,
@@ -202,65 +221,9 @@ function crud()
             }
         })
     })
-    $('#importmaterial').on('click', function(e){
+    $(document).on('click','.deleteticket', function(e){
         e.preventDefault()
-        const formExcel = new FormData($('#formimportmaterial')[0])
-        $(this).hide()
-        $('#loadingimport').show()
-        $.ajax({
-            type : 'POST',
-            url: urlImport,
-            data : formExcel,
-            processData: false,
-            contentType: false,
-            success: function(res,status,xhr){
-                if(xhr.status === 200){
-                    $('#loadingimport').hide()
-                    $('#importmaterial').show()
-                    Swal.fire({
-                        title: 'success',
-                        icon: 'success',
-                        text: res.message
-                    }).then((result)=>{
-                        $('#datares').html('')
-                        res.results.results.forEach((data) => {
-                            const table = 
-                            `<tr>
-                                    <td class="fw-semibold">${data.mold_number ?? '-'}</td>
-                                    <td class="text-muted">${data.message}</td>
-                                    <td>${data.row}</td>
-                                    <td>
-                                        <span class="${data.status == 'skipped' ? 'badge bg-yellow text-yellow-fg' : data.status == 'success' ? 'badge bg-green text-green-fg' : 'badge bg-red text-red-fg'}}">
-                                            ${data.status}
-                                        </span>
-                                    </td>
-                                </tr>
-                            `;
-                            $('#datares').append(table)
-                        })
-                        $('#tableresult-wrapper').show()
-                        table.refresh
-                    })
-                }
-            }, error: function(xhr, status, error){
-                $('#loadingimport').hide()
-                $('#importmaterial').show()
-                const errMes = JSON.parse(xhr.responseText)
-                Swal.fire({
-                    title: 'error',
-                    icon: 'error',
-                    text: errMes.message
-                })
-            }
-        })
-    })
-    $('#modal-import').on('show.bs.modal', function () {
-        $('#datares').html('')
-        $('#tableresult-wrapper').hide()
-    })
-    $(document).on('click','.deletematerial', function(e){
-        e.preventDefault()
-        const mold = $(this).data('material');
+        const ticket = $(this).data('ticket');
             Swal.fire({
                 title: 'Delete',
                 icon: 'warning',
@@ -273,7 +236,7 @@ function crud()
                 if (result.isConfirmed) {
                     $.ajax({
                         type: 'DELETE',
-                        url: deleteMaterial +'/'+ mold,
+                        url: deleteTicket +'/'+ ticket,
                         headers: {
                             'X-CSRF-TOKEN': csrfToken
                         },

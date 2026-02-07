@@ -43,8 +43,7 @@ class UserRepository
 
     public function deleteUser($id)
     {
-        $user = User::query()->where('username','=',$id)->first();
-        $user->delete();
+        $user = User::deleteWhere(['username'=>$id]);
         return $user;
     }
 }

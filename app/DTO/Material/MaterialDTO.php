@@ -20,7 +20,7 @@ final class MaterialDTO
             $material->mold_number,
             $material->lamp_name,
             $material->model_name,
-            $material->type,
+            $material->type_material,
         );
     }
 }

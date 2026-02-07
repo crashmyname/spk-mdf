@@ -14,6 +14,21 @@ class MaterialRepository
         return $material;
     }
 
+    public function getMaterial()
+    {
+        $materials = Materials::all();
+        $dtos = [];
+        foreach ($materials as $material) {
+            $dtos[] = new MaterialDTO(
+                $material->mold_number,
+                $material->lamp_name,
+                $material->model_name,
+                $material->type_material,
+            );
+        }
+        return $dtos;
+    }
+
     public function createMaterial(array $data)
     {
         // $attribute = [
@@ -44,8 +59,7 @@ class MaterialRepository
 
     public function deleteMaterial($id)
     {
-        $material = Materials::query()->where('mold_number','=',$id)->first();
-        $material->delete();
+        $material = Materials::deleteWhere(['mold_number'=>$id]);
         return $material;
     }
 }

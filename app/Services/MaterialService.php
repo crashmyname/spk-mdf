@@ -9,6 +9,11 @@ class MaterialService
 {
     // Service logic here
     public function __construct(protected MaterialRepository $repo){}
+    public function getMaterial()
+    {
+        $material = $this->repo->getMaterial();
+        return $material;
+    }
     public function createMaterial(array $data)
     {
         $validate = $this->validate($data);

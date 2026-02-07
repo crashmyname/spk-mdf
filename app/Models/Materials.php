@@ -8,4 +8,11 @@ class Materials extends BaseModel
     // Model logic here
     public $table = 'material';
     protected $primaryKey = 'material_id';
+
+    protected array $hidden = ['material_id'];
+
+    public function ticket()
+    {
+        return $this->belongsTo(Ticket::class,'material_id','material_id');
+    }
 }

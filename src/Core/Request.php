@@ -168,13 +168,13 @@ class Request
         $sizeMB = $sizeKB / 1024;
 
         return [
-            'original_name' => $file['name'] ?? '',
+            'name' => $file['name'] ?? '',
             'extension' => pathinfo($file['name'] ?? '', PATHINFO_EXTENSION),
             'mime_type' => $file['type'] ?? '',
             'size' => $size,
             'size_kb' => round($sizeKB, 2),
             'size_mb' => round($sizeMB, 2),
-            'tmp_path' => $file['tmp_name'] ?? '',
+            'tmp_name' => $file['tmp_name'] ?? '',
             'error' => $file['error'] ?? 0,
             'uploaded_at' => Date::Now(),
         ];

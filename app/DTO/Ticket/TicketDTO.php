@@ -17,4 +17,9 @@ final class TicketDTO
         public string $sketch_item,
         public string $options
     ){}
+
+    public function toArray(): array
+    {
+        return get_object_vars($this);
+    }
 }

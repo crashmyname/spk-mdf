@@ -1,8 +1,10 @@
 <?php
 
 namespace App\Services;
+use App\DTO\Material\MaterialDTO;
 use App\DTO\Ticket\TicketDTO;
 use App\Repository\TicketRepository;
+use Bpjs\Framework\Helpers\Date;
 use Bpjs\Framework\Helpers\Mailer;
 use Bpjs\Framework\Helpers\Validator;
 
@@ -10,8 +12,9 @@ class TiketService
 {
     // Service logic here
     public function __construct(protected TicketRepository $ticketrepo){}
-    public function createTicket(array $data)
+    public function createTicket(array $data,$file)
     {
+        // vd($this->ticketrepo->getTicketById(1));
         $validate = $this->validate($data);
         if($validate){
             return [
@@ -22,8 +25,8 @@ class TiketService
         }
         $ticket = $this->ticketrepo->createTicket($data);
         if($ticket){
-            $this->uploadedFile($data['sketch_item']);
-            $this->sentEmail();
+            $this->upload($file);
+            $this->sentEmail($ticket);
         }
         return [
             'success' => true,
@@ -47,7 +50,7 @@ class TiketService
             $data['sketch_item'],
             $data['options'],
         );
-        vd($data);
+        // vd($data);
         $ticket = $this->ticketrepo->updateTicket(array($dto));
         return [
             'success' => true,
@@ -57,22 +60,75 @@ class TiketService
         ];
     }
 
-    private function uploadedFile($file)
+    public function deleteTicket($id)
     {
-        $path = storage_path('attachment');
+        $ticket = $this->ticketrepo->deleteTicket($id);
+        return [
+            'success' => true,
+            'status' => 200,
+            'message' => 'success delete ticket',
+            'data' => $ticket
+        ];
+    }
+
+    private function upload($file)
+    {
+        // vd($file);
+        $path = storage_path('attachment/');
         if(!is_dir($path)){
             mkdir($path,0777,true);
         }
         return uploadFile($file,$path);
     }
 
-    private function sentEmail()
+    private function sentEmail($ticket)
     {
-        $mailer = Mailer::make();
-        $mailer->to('fadli_azka_prayogi@stanley-electric.com')
-        ->subject('Notification SPK Mold')
-        ->body('<h1>Test</h1>')
-        ->send();
+        $dto = new TicketRepository();
+        $res = $dto->getTicketById($ticket->ticket_id);
+        $templatePath = BPJS_BASE_PATH .'/public/templates/email_ticket.html';
+        if(!file_exists($templatePath)){
+            throw new \Exception("Email template not found: ".$templatePath);
+        }
+
+        $template = file_get_contents($templatePath);
+
+        $search = [
+            '{receiver_name}',
+            '{ticket_uuid}',
+            '{no_order}',
+            '{name}',
+            '{section}',
+            '{material}',
+            '{type_ticket}',
+            '{action}',
+            '{lot_shot}',
+            '{total_shot}',
+            '{date_create}',
+            '{ticket_url}'
+        ];
+
+        $replace = [
+            'Mold & Dies Team',
+            $ticket->uuid,
+            $ticket->no_order,
+            $res->user->name,
+            $res->user->section,
+            $res->material->mold_number,
+            $ticket->type_ticket,
+            $ticket->action,
+            $ticket->lot_shot,
+            $ticket->total_shot,
+            Date::parse($ticket->date_create)->format('d-m-Y'),
+            'http:sch-server:82/spk-mdf/'.$ticket->uuid
+        ];
+
+        $body = str_replace($search, $replace, $template);
+
+        Mailer::make()
+            ->to('fadli_azka_prayogi@stanley-electric.com')
+            ->subject('Notification SPK Mold')
+            ->body($body)
+            ->send();
     }
 
     private function validate(array $data)
@@ -83,16 +139,16 @@ class TiketService
             'user_id' => 'required',
             'action' => 'required',
             'type_ticket' => 'required',
-            'material_id' => 'required',
-            'sketch_item' => 'required|image:image/png,image/jpg,image/jpeg,image/webp,image/jfif',
+            'material' => 'required',
+            'file_sketch' => 'required|image:image/png,image/jpg,image/jpeg,image/webp,image/jfif',
         ],
         [
             'date_create.required' => 'Date Create is required',
             'user_id.required' => 'User is required',
             'action.required' => 'Action is required',
-            'material_id.required' => 'Material is required',
-            'sketch_item.required' => 'Sketch is required',
-            'sketch_item.filetype' => 'Sketch must be image (jpg,png,jpeg,webp,jfif)',
+            'material.required' => 'Material is required',
+            'file_sketch.required' => 'Sketch is required',
+            'file_sketch.filetype' => 'Sketch must be image (jpg,png,jpeg,webp,jfif)',
         ]
         );
         return $validate;

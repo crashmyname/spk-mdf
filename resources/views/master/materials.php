@@ -151,6 +151,28 @@
                             <label class="form-label">File</label>
                             <input type="file" class="form-control" name="file" id="file">
                         </div>
+                        <a href="<?= asset('import/template-material.xlsx')?>" class="btn btn-sm btn-success">Template</a>
+                        <div id="tableresult-wrapper" class="card mt-3" style="display:none">
+                            <div class="card-header">
+                                <h3 class="card-title">Import Result</h3>
+                                <div id="summaryresult" class="ms-auto"></div>
+                            </div>
+
+                            <div class="table-responsive">
+                                <table class="table table-vcenter card-table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Mold Number</th>
+                                            <th>Message</th>
+                                            <th>Row</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="datares"></tbody>
+                                </table>
+                            </div>
+
+                        </div>
                     </div>
                     <div class="container container-slim py-2" id="loadingbar" style="display:none">
                         <div class="text-center">
@@ -193,6 +215,6 @@
         var getMaterial = '<?= route('materials.getdata')?>'
         var editMaterial = '<?= url('material')?>'
         var deleteMaterial = '<?= url('material')?>'
-        // var urlImport = '<?= url('admin/import/material')?>'
+        var urlImport = '<?= route('materials.import')?>'
     </script>
     <script src="<?= asset_v('js/materials.js')?>"></script>

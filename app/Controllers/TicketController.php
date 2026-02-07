@@ -2,20 +2,36 @@
 
 namespace App\Controllers;
 
+use App\Models\Materials;
+use App\Models\Ticket;
+use App\Services\MaterialService;
 use App\Services\TiketService;
 use Bpjs\Framework\Helpers\BaseController;
 use Bpjs\Core\Request;
 use Bpjs\Framework\Helpers\Response;
+use Bpjs\Framework\Helpers\TablePlus;
 use Bpjs\Framework\Helpers\Validator;
 use Bpjs\Framework\Helpers\View;
 use Bpjs\Framework\Helpers\CSRFToken;
 
 class TicketController extends BaseController
 {
-    public function index()
+    public function index(MaterialService $materialService)
     {
         $title = 'SPK';
-        return view('ticket/ticket',compact('title'),'layout/app');
+        $material = $materialService->getMaterial();
+        // $ticket = Ticket::query()->load(['user','material','approval'])->get();
+        return view('ticket/ticket',compact('title','material'),'layout/app');
+    }
+
+    public function getMaterial(MaterialService $materialService)
+    {
+        $material = $materialService->getMaterial();
+        return Response::json([
+            'status' => 200,
+            'message' => 'success',
+            'data' => $material
+        ],200);
     }
 
     public function show($id)
@@ -23,9 +39,28 @@ class TicketController extends BaseController
         // Tampilkan resource dengan ID: $id
     }
 
+    public function getTicket(Request $request)
+    {
+        return TablePlus::of('ticket')
+                        ->leftJoin('users','users.user_id','=','ticket.user_id')
+                        ->leftJoin('material','material.material_id','=','ticket.material_id')
+                        ->select('no_order','date_create','users.username','users.name','action','type_ticket','material.mold_number','material.model_name','material.lamp_name','material.type_material','lot_shot','total_shot','sketch_item','options','ticket_id')
+                        ->searchable([
+                            'no_order',
+                            'date_create',
+                            'users.username',
+                            'users.name','action','type_ticket','material.mold_number','material.model_name','material.lamp_name','material.type_material','lot_shot','total_shot','sketch_item','options'
+                        ])
+                        ->filters($request->input('filters',[]) ?? [])
+                        ->orderBy('ticket_id','ASC')
+                        ->paginate($request->per_page ?? 10, $request->page ?? 1)
+                        ->handleDistinct($request->distinct ?? null)
+                        ->make();
+    }
+
     public function store(Request $request, TiketService $service)
     {
-        $result = $service->createTicket($request->all());
+        $result = $service->createTicket($request->all(),$request->file('file_sketch'));
         return Response::json([
             'status' => $result['status'],
             'message' => $result['message'] ?? 'success',
@@ -43,8 +78,20 @@ class TicketController extends BaseController
         ],$result['status']);
     }
 
-    public function destroy($id)
+    public function destroy($id, TiketService $service)
     {
-        // Hapus resource dengan ID: $id
+        $result = $service->deleteTicket($id);
+        return Response::json([
+            'status' => $result['status'],
+            'message' => $result['message'] ?? 'success',
+            'data' => $result['data'] ?? null,
+        ],$result['status']);
+    }
+
+    public function DetailTicket(Request $request, $id)
+    {
+        $title = 'Detail SPK';
+        $ticket = Ticket::find($id);
+        return view('ticket/detail-ticket',compact('title','id'),'layout/app');
     }
 }

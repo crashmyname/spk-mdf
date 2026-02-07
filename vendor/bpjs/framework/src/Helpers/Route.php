@@ -2,6 +2,7 @@
 namespace Bpjs\Framework\Helpers;
 
 use Bpjs\Core\Request;
+use Exception;
 use Helpers\View;
 use Middlewares\SessionMiddleware;
 
@@ -101,7 +102,7 @@ class Route
             exit;
         }
 
-        ErrorHandler::handleException($name);
+        ErrorHandler::handleException(new \Exception($name));
     }
 
     public static function prefix(string $prefix, \Closure $routes)
@@ -139,7 +140,7 @@ class Route
             exit;
         }
 
-        self::renderErrorPage("Route dengan nama '{$name}' tidak ditemukan.");
+        ErrorHandler::handleException(new \Exception("Route dengan nama '{$name}' tidak ditemukan."));
     }
 
     public function limit(int $maxRequests)

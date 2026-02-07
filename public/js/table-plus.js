@@ -21,7 +21,7 @@ class TablePlus {
     this.selectedRows = new Set();
     this.columnFilters = {};
     this.savePreferences = config.savePreferences !== false;
-    this.storageKey = config.storageKey || 'tableplus_prefs';
+    this.storageKey = config.storageKey || `tableplus_${location.pathname}_${config.url}`;
     this.onRowSelect = config.onRowSelect || null;
     this.customActions = config.customActions || [];
     this.rowIdentifier = config.rowIdentifier || 'id';

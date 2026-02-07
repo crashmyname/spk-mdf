@@ -9,136 +9,209 @@ class BaseController {
     
     public function prettyPrint($data)
     {
-        echo '
-        <style>
-            .pretty-print {
-                background-color: #2d2d2d;
-                color: #f8f8f2;
-                padding: 15px;
-                border-radius: 8px;
-                font-family: "Courier New", Courier, monospace;
-                line-height: 1.5;
-                font-size: 16px;
-                max-width: 100%;
-                overflow-x: auto;
-            }
-            .pretty-print .key {
-                color: #66d9ef;
-            }
-            .pretty-print .string {
-                color: #a6e22e;
-            }
-            .pretty-print .number {
-                color: #fd971f;
-            }
-            .pretty-print .bool {
-                color: #f92672;
-            }
-            .pretty-print .null {
-                color: #75715e;
-            }
-            .pretty-print .collapsible {
-                cursor: pointer;
-                color: #f8f8f2;
-                border: none;
-                background: none;
-                text-align: left;
-            }
-            .pretty-print .collapsible:after {
-                content: " ▼";
-            }
-            .pretty-print .collapsible.active:after {
-                content: " ▲";
-            }
-            .pretty-print .content {
-                display: none;
-                margin-left: 20px;
-            }
-            .pretty-print .content.show {
-                display: block;
-            }
-        </style>
-        ';
+        $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) 
+            && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+
+        $isJson = isset($_SERVER['HTTP_ACCEPT']) 
+            && str_contains($_SERVER['HTTP_ACCEPT'], 'application/json');
+
+        if ($isAjax || $isJson) {
+            $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
+            $caller = $trace[1] ?? [];
+
+            $response = [
+                'success' => true,
+                'type' => gettype($data),
+                'data' => $data,
+                'debug' => [
+                    'file' => $caller['file'] ?? null,
+                    'line' => $caller['line'] ?? null,
+                    'function' => $caller['function'] ?? null,
+                    'timestamp' => date('Y-m-d H:i:s'),
+                    'memory_usage' => memory_get_usage(true),
+                    'request' => [
+                        'method' => $_SERVER['REQUEST_METHOD'] ?? null,
+                        'uri' => $_SERVER['REQUEST_URI'] ?? null,
+                        'ip' => $_SERVER['REMOTE_ADDR'] ?? null
+                    ]
+                ]
+            ];
+
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode($response, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+            exit;
+        }
         
-        // Tambahkan JavaScript untuk collapsible functionality
         echo '
-        <script>
-            document.addEventListener("DOMContentLoaded", function() {
-                var coll = document.getElementsByClassName("collapsible");
-                for (var i = 0; i < coll.length; i++) {
-                    coll[i].addEventListener("click", function() {
-                        this.classList.toggle("active");
-                        var content = this.nextElementSibling;
-                        if (content.style.display === "block") {
-                            content.style.display = "none";
-                        } else {
-                            content.style.display = "block";
+            <style>
+            .pretty-wrapper{
+                background:#1e1e1e;
+                border-radius:10px;
+                padding:15px;
+                font-family: monospace;
+                color:#e6e6e6;
+                box-shadow:0 4px 15px rgba(0,0,0,0.4);
+            }
+
+            .pretty-header{
+                display:flex;
+                justify-content:space-between;
+                align-items:center;
+                margin-bottom:10px;
+                border-bottom:1px solid #333;
+                padding-bottom:8px;
+            }
+
+            .pretty-title{
+                font-weight:bold;
+                font-size:16px;
+            }
+
+            .pretty-toolbar button{
+                background:#333;
+                border:none;
+                color:#fff;
+                padding:5px 10px;
+                margin-left:5px;
+                border-radius:5px;
+                cursor:pointer;
+                font-size:12px;
+            }
+
+            .pretty-toolbar button:hover{
+                background:#555;
+            }
+
+            .pretty-print{
+                font-size:14px;
+                line-height:1.6;
+            }
+
+            .key{color:#66d9ef;}
+            .string{color:#a6e22e;}
+            .number{color:#fd971f;}
+            .bool{color:#f92672;}
+            .null{color:#75715e;}
+
+            .node{
+                margin-left:18px;
+                border-left:1px dashed #333;
+                padding-left:8px;
+                display:none;
+            }
+
+            .collapsible{
+                cursor:pointer;
+                color:#ccc;
+            }
+
+            .badge{
+                background:#444;
+                padding:2px 6px;
+                font-size:11px;
+                border-radius:4px;
+                margin-left:5px;
+            }
+            </style>
+            ';
+
+            echo '
+            <script>
+            function toggleAll(expand){
+                document.querySelectorAll(".node").forEach(el=>{
+                    el.style.display = expand ? "block" : "none";
+                });
+            }
+
+            function toggleNode(el){
+                let node = el.nextElementSibling;
+                node.style.display = node.style.display === "block" ? "none" : "block";
+            }
+
+            function copyJson(){
+                navigator.clipboard.writeText(document.getElementById("json-source").textContent);
+                alert("Copied JSON!");
+            }
+            </script>
+            ';
+
+            function format_data($data){
+
+                $result = "";
+
+                if(is_array($data) || is_object($data)){
+
+                    foreach($data as $key => $value){
+
+                        $type = gettype($value);
+
+                        $result .= '<div>';
+
+                        $result .= '<span class="collapsible" onclick="toggleNode(this)">';
+                        $result .= '<span class="key">['.htmlspecialchars($key).']</span>';
+                        $result .= '<span class="badge">'.$type.'</span>';
+                        $result .= '</span>';
+
+                        if(is_array($value) || is_object($value)){
+
+                            $result .= '<div class="node">';
+                            $result .= format_data((array)$value);
+                            $result .= '</div>';
+
+                        }elseif(is_string($value)){
+                            $result .= ' => <span class="string">"'.htmlspecialchars($value).'"</span>';
+                        }elseif(is_numeric($value)){
+                            $result .= ' => <span class="number">'.$value.'</span>';
+                        }elseif(is_bool($value)){
+                            $result .= ' => <span class="bool">'.($value?'true':'false').'</span>';
+                        }else{
+                            $result .= ' => <span class="null">null</span>';
                         }
-                    });
-                }
-            });
-        </script>
-        ';
-        
-        // Fungsi rekursif untuk memformat data
-        function format_data($data) {
-            $result = '';
-    
-            // Cek tipe data sebelum foreach
-            if (is_array($data) || is_object($data)) {
-                foreach ($data as $key => $value) {
-                    $result .= '<span class="key">[' . htmlspecialchars($key) . ']</span> => ';
-                    if (is_array($value) || is_object($value)) {
-                        $result .= '<button class="collapsible">Object/Array</button>';
-                        $result .= '<div class="content">';
-                        $result .= format_data((array) $value);
+
                         $result .= '</div>';
-                    } elseif (is_string($value)) {
-                        $result .= '<span class="string">"' . htmlspecialchars($value) . '"</span><br>';
-                    } elseif (is_numeric($value)) {
-                        $result .= '<span class="number">' . htmlspecialchars($value) . '</span><br>';
-                    } elseif (is_bool($value)) {
-                        $result .= '<span class="bool">' . ($value ? 'true' : 'false') . '</span><br>';
-                    } else {
-                        $result .= '<span class="null">null</span><br>';
                     }
                 }
-            } else {
-                // Jika bukan array/object, tampilkan langsung
-                if (is_string($data)) {
-                    $result .= '<span class="string">"' . htmlspecialchars($data) . '"</span><br>';
-                } elseif (is_numeric($data)) {
-                    $result .= '<span class="number">' . htmlspecialchars($data) . '</span><br>';
-                } elseif (is_bool($data)) {
-                    $result .= '<span class="bool">' . ($data ? 'true' : 'false') . '</span><br>';
-                } else {
-                    $result .= '<span class="null">null</span><br>';
+
+                return $result;
+            }
+
+            if (is_object($data)) {
+                $reflection = new ReflectionClass($data);
+                $properties = $reflection->getProperties();
+                $formatted_data = [];
+
+                foreach ($properties as $property) {
+                    $property->setAccessible(true);
+                    $formatted_data[$property->getName()] = $property->getValue($data);
                 }
+            } else {
+                $formatted_data = $data;
             }
-    
-            return $result;
-        }
-    
-        // Cek tipe data utama
-        if (is_object($data)) {
-            // Menggunakan refleksi jika data adalah objek
-            $reflection = new ReflectionClass($data);
-            $properties = $reflection->getProperties();
-            $formatted_data = [];
-            foreach ($properties as $property) {
-                $property->setAccessible(true);
-                $formatted_data[$property->getName()] = $property->getValue($data);
-            }
-        } else {
-            // Jika data adalah array atau tipe sederhana lainnya
-            $formatted_data = $data;
-        }
-    
-        // Tampilkan hasil yang sudah diformat
-        echo '<div class="pretty-print">';
-        echo format_data($formatted_data);
-        echo '</div>';
-        exit;
+
+            $jsonSource = htmlspecialchars(json_encode($data, JSON_PRETTY_PRINT));
+
+            echo '<div class="pretty-wrapper">';
+
+            echo '<div class="pretty-header">';
+            echo '<div class="pretty-title">Debug Viewer</div>';
+
+            echo '<div class="pretty-toolbar">
+                    <button onclick="toggleAll(true)">Expand All</button>
+                    <button onclick="toggleAll(false)">Collapse All</button>
+                    <button onclick="copyJson()">Copy JSON</button>
+                </div>';
+
+            echo '</div>';
+
+            echo '<pre id="json-source" style="display:none">'.$jsonSource.'</pre>';
+
+            echo '<div class="pretty-print">';
+            echo format_data($formatted_data);
+            echo '</div>';
+
+            echo '</div>';
+
+            exit;
     }
 
     public function redirect($url)

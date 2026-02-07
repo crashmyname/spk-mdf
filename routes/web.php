@@ -16,7 +16,7 @@ Route::post('/login',[AuthController::class, 'onLogin'])->limit(10)->name('auth.
 // Route::get('/dashboard')
 Route::group([AuthMiddleware::class], function(){
     Route::post('/logout',[AuthController::class, 'logout'])->name('auth.logout');
-    Route::get('/', [HomeController::class, 'index']);
+    Route::get('/', [HomeController::class, 'index'])->name('home');
     // User
     Route::get('/users',[UserController::class,'index'])->name('users');
     Route::get('/users/getdata',[UserController::class,'getUser'])->name('users.getdata');
@@ -30,16 +30,19 @@ Route::group([AuthMiddleware::class], function(){
     Route::get('/materials/getdata',[MaterialController::class,'getMaterial'])->name('materials.getdata');
     Route::get('/material/{id}',[MaterialController::class, 'show'])->name('show.material');
     Route::post('/materials',[MaterialController::class, 'create'])->name('materials.create');
+    Route::post('/material/import',[MaterialController::class, 'import'])->name('materials.import');
     Route::put('/material/{id}',[MaterialController::class, 'update'])->name('materials.update');
     Route::delete('/material/{id}',[MaterialController::class, 'destroy'])->name('materials.delete');
 
     // Ticket
+    Route::get('/getmaterial/ticket',[TicketController::class,'getMaterial'])->name('ticket.getmaterial');
     Route::get('/tickets',[TicketController::class,'index'])->name('tickets');
     Route::get('/tickets/getdata',[TicketController::class,'getTicket'])->name('tickets.getdata');
     Route::get('/ticket/{id}',[TicketController::class, 'show'])->name('show.ticket');
-    Route::post('/tickets',[TicketController::class, 'create'])->name('tickets.create');
+    Route::post('/tickets',[TicketController::class, 'store'])->name('tickets.create');
     Route::put('/ticket/{id}',[TicketController::class, 'update'])->name('tickets.update');
     Route::delete('/ticket/{id}',[TicketController::class, 'destroy'])->name('tickets.delete');
+    Route::get('/ticket/detail/{id}',[TicketController::class, 'DetailTicket'])->name('ticket.detail.get');
     // API GET Employee
     Route::post('/emp',[ApiController::class, 'getEmployee'])->name('getemp');
 });
