@@ -2,6 +2,7 @@
 
 use App\Controllers\ApiController;
 use App\Controllers\AuthController;
+use App\Controllers\DetailTicketController;
 use App\Controllers\HomeController;
 use App\Controllers\MaterialController;
 use App\Controllers\TicketController;
@@ -43,6 +44,10 @@ Route::group([AuthMiddleware::class], function(){
     Route::put('/ticket/{id}',[TicketController::class, 'update'])->name('tickets.update');
     Route::delete('/ticket/{id}',[TicketController::class, 'destroy'])->name('tickets.delete');
     Route::get('/ticket/detail/{id}',[TicketController::class, 'DetailTicket'])->name('ticket.detail.get');
+    // Detail
+    Route::post('/detail/ticket/req',[TicketController::class,'addDetailRequest'])->name('detail.ticket.req');
+    Route::post('/detail/ticket/act',[TicketController::class,'addDetailActual'])->name('detail.ticket.act');
+    Route::get('/get/detail/{id}',[DetailTicketController::class,'getDetail'])->name('detail.ticket.get');
     // API GET Employee
     Route::post('/emp',[ApiController::class, 'getEmployee'])->name('getemp');
 });

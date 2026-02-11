@@ -17,7 +17,7 @@
                     label : 'Action',
                     render: (row) => {
                         return `
-                        <a href="${urlDetail+'/'+row.ticket_id}" class="btn btn-sm btn-teal">Process</a>
+                        <a href="${urlDetail+'/'+row.ticket_hash}" class="btn btn-sm btn-teal">Process</a>
                         <button
                             class="btn btn-sm btn-yellow"
                             data-bs-toggle="modal"
@@ -25,7 +25,7 @@
                             data-user='${JSON.stringify(row)}'>
                             Edit
                         </button>
-                        <button type="submit" class="btn btn-sm btn-danger deleteticket" data-ticket="${row.ticket_id}">Delete</button>
+                        <button type="submit" class="btn btn-sm btn-danger deleteticket" data-ticket="${row.ticket_hash}">Delete</button>
                         `;
                     },
                     exportText: (row) => {
@@ -108,6 +108,7 @@ function crud()
                         text: response.message
                     }).then((result) => {
                         table.refresh()
+                        window.location.href = urlDetail + '/' + response.data;
                     })
                 } else {
                     btnAdd.show()

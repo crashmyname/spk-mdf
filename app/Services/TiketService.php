@@ -4,6 +4,7 @@ namespace App\Services;
 use App\DTO\Material\MaterialDTO;
 use App\DTO\Ticket\TicketDTO;
 use App\Repository\TicketRepository;
+use Bpjs\Framework\Helpers\Crypto;
 use Bpjs\Framework\Helpers\Date;
 use Bpjs\Framework\Helpers\Mailer;
 use Bpjs\Framework\Helpers\Validator;
@@ -32,7 +33,7 @@ class TiketService
             'success' => true,
             'status' => 200,
             'message' => 'SPK Created',
-            'data' => $ticket
+            'data' => Crypto::encrypt($ticket->ticket_id)
         ];
     }
 

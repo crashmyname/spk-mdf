@@ -24,4 +24,9 @@ class Ticket extends BaseModel
     {
         return $this->hasOne(Approval::class, 'ticket_id','ticket_id');
     }
+
+    public function detail()
+    {
+        return $this->hasMany(DetailTicket::class,'ticket_id','ticket_id');
+    }
 }

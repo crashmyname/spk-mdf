@@ -1,73 +1,124 @@
+<?php
+use Bpjs\Framework\Helpers\Session;
+?>
 <div class="container">
-    <div class="row row-cards">
-        <div class="col-12">
-            <form class="card">
+    <h1>SPK WITH SYSTEM ID : <?= $ticket->uuid.'-'.$ticket->type_ticket?></h1>
+    <div class="col-12">
+        <div class="card">
             <div class="card-header">
-                <h3 class="card-title">Basic form</h3>
+                <ul class="nav nav-tabs card-header-tabs" data-bs-toggle="tabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <a href="#tabs-require" class="nav-link active" data-bs-toggle="tab" aria-selected="true"
+                            role="tab"><!-- Download SVG icon from http://tabler-icons.io/i/home -->
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-hammer"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M11.414 10l-7.383 7.418a2.091 2.091 0 0 0 0 2.967a2.11 2.11 0 0 0 2.976 0l7.407 -7.385" /><path d="M18.121 15.293l2.586 -2.586a1 1 0 0 0 0 -1.414l-7.586 -7.586a1 1 0 0 0 -1.414 0l-2.586 2.586a1 1 0 0 0 0 1.414l7.586 7.586a1 1 0 0 0 1.414 0" /></svg>
+                            Request Repair</a>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <a href="#tabs-actual" class="nav-link" data-bs-toggle="tab" aria-selected="false"
+                            role="tab" tabindex="-1"><!-- Download SVG icon from http://tabler-icons.io/i/user -->
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-list-check"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3.5 5.5l1.5 1.5l2.5 -2.5" /><path d="M3.5 11.5l1.5 1.5l2.5 -2.5" /><path d="M3.5 17.5l1.5 1.5l2.5 -2.5" /><path d="M11 6l9 0" /><path d="M11 12l9 0" /><path d="M11 18l9 0" /></svg>
+                            Actual Repair</a>
+                    </li>
+                </ul>
             </div>
             <div class="card-body">
-                <div class="mb-3">
-                <label class="form-label required">Email address</label>
-                <div>
-                    <input type="email" class="form-control" aria-describedby="emailHelp" placeholder="Enter email">
-                    <small class="form-hint">We'll never share your email with anyone else.</small>
-                </div>
-                </div>
-                <div class="mb-3">
-                <label class="form-label required">Password</label>
-                <div>
-                    <input type="password" class="form-control" placeholder="Password">
-                    <small class="form-hint">
-                    Your password must be 8-20 characters long, contain letters and numbers, and must not contain
-                    spaces, special characters, or emoji.
-                    </small>
-                </div>
-                </div>
-                <div class="mb-3">
-                <label class="form-label">Select</label>
-                <div>
-                    <select class="form-select">
-                    <option>Option 1</option>
-                    <optgroup label="Optgroup 1">
-                        <option>Option 1</option>
-                        <option>Option 2</option>
-                    </optgroup>
-                    <option>Option 2</option>
-                    <optgroup label="Optgroup 2">
-                        <option>Option 1</option>
-                        <option>Option 2</option>
-                    </optgroup>
-                    <optgroup label="Optgroup 3">
-                        <option>Option 1</option>
-                        <option>Option 2</option>
-                    </optgroup>
-                    <option>Option 3</option>
-                    <option>Option 4</option>
-                    </select>
-                </div>
-                </div>
-                <div class="mb-3">
-                <label class="form-label">Checkboxes</label>
-                <div>
-                    <label class="form-check">
-                    <input class="form-check-input" type="checkbox" checked="">
-                    <span class="form-check-label">Option 1</span>
-                    </label>
-                    <label class="form-check">
-                    <input class="form-check-input" type="checkbox">
-                    <span class="form-check-label">Option 2</span>
-                    </label>
-                    <label class="form-check">
-                    <input class="form-check-input" type="checkbox" disabled="">
-                    <span class="form-check-label">Option 3</span>
-                    </label>
-                </div>
+                <div class="tab-content">
+                    <div class="tab-pane active show" id="tabs-require" role="tabpanel">
+                        <h4>Request Repair</h4>
+                        <form class="card" id="formreqrepair" action="" method="POST" enctype="multipart/form-data">
+                            <?= csrf()?>
+                            <div class="card-header">
+                                <h3 class="card-title">Add Request Repair</h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label required">Detail Item</label>
+                                    <div>
+                                        <input type="hidden" name="hash" id="hash" value="<?= $id?>">
+                                        <input type="text" name="detail_item" id="detail_item" class="form-control">
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label required">Repair Requirement</label>
+                                    <div>
+                                        <textarea name="repair_req" id="repair_req" class="form-control"></textarea>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label required">Date Repair</label>
+                                    <div>
+                                        <input type="date" name="date_repair" id="date_repair" class="form-control">
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label required">Repair By</label>
+                                    <div>
+                                        <input type="text" readonly name="repair_by" id="repair_by"
+                                            value="<?= Session::user()->name ?>" class="form-control">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-footer text-end">
+                                <button type="submit" class="btn btn-primary" id="submitRequest">Submit</button>
+                                <button class="btn btn-primary" style="display: none;" id="loadingreq" disabled>
+                                    <div class="spinner-border me-2" role="status"></div>
+                                    <strong>Loading...</strong>
+                                </button>
+                            </div>
+                        </form>
+                        <hr>
+                        <h3>Request</h3>
+                        <div class="card">
+                            <div class="card-body">
+                                <h3 class="card-title">List Repair</h3>
+                                <ul class="steps steps-vertical" id="listreq">
+                                    
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-pane" id="tabs-actual" role="tabpanel">
+                        <h4>Actual Repair</h4>
+                        <form class="card" id="formactrepair" action="" method="POST" enctype="multipart/form-data">
+                            <div class="card-header">
+                                <h3 class="card-title">Add Actual Repair</h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label required">Actual Repair</label>
+                                    <div>
+                                        <input type="text" name="actual_repair" id="actual_repair"
+                                            class="form-control">
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label required">Date Repair</label>
+                                    <div>
+                                        <input type="date" name="date_act" id="date_act"
+                                            class="form-control">
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label required">Actual By</label>
+                                    <div>
+                                        <input type="text" readonly name="actual_by" id="actual_by"
+                                            value="<?= Session::user()->name ?>" class="form-control">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-footer text-end">
+                                <button type="submit" class="btn btn-primary" id="submitActual">Submit</button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
-            <div class="card-footer text-end">
-                <button type="submit" class="btn btn-primary">Submit</button>
-            </div>
-            </form>
         </div>
     </div>
 </div>
+<script>
+    var urlReqRepair = '<?= route('detail.ticket.req')?>'
+    var getReqRepair = '<?= url('get/detail')?>'
+    var hash = '<?= $id?>'
+</script>
+<script src="<?= asset_v('js/detailticket.js')?>"></script>

@@ -4,10 +4,12 @@ namespace App\Controllers;
 
 use App\Models\Materials;
 use App\Models\Ticket;
+use App\Services\DetailTicketService;
 use App\Services\MaterialService;
 use App\Services\TiketService;
 use Bpjs\Framework\Helpers\BaseController;
 use Bpjs\Core\Request;
+use Bpjs\Framework\Helpers\Crypto;
 use Bpjs\Framework\Helpers\Response;
 use Bpjs\Framework\Helpers\TablePlus;
 use Bpjs\Framework\Helpers\Validator;
@@ -41,7 +43,7 @@ class TicketController extends BaseController
 
     public function getTicket(Request $request)
     {
-        return TablePlus::of('ticket')
+        $result = TablePlus::of('ticket')
                         ->leftJoin('users','users.user_id','=','ticket.user_id')
                         ->leftJoin('material','material.material_id','=','ticket.material_id')
                         ->select('no_order','date_create','users.username','users.name','action','type_ticket','material.mold_number','material.model_name','material.lamp_name','material.type_material','lot_shot','total_shot','sketch_item','options','ticket_id')
@@ -51,6 +53,9 @@ class TicketController extends BaseController
                             'users.username',
                             'users.name','action','type_ticket','material.mold_number','material.model_name','material.lamp_name','material.type_material','lot_shot','total_shot','sketch_item','options'
                         ])
+                        ->addColumn('ticket_hash', function ($row) {
+                            return Crypto::encrypt($row['ticket_id']);
+                        })
                         ->filters($request->input('filters',[]) ?? [])
                         ->orderBy('ticket_id','ASC')
                         ->paginate($request->per_page ?? 10, $request->page ?? 1)
@@ -91,7 +96,22 @@ class TicketController extends BaseController
     public function DetailTicket(Request $request, $id)
     {
         $title = 'Detail SPK';
-        $ticket = Ticket::find($id);
-        return view('ticket/detail-ticket',compact('title','id'),'layout/app');
+        $ticket = Ticket::find(Crypto::decrypt($id));
+        return view('ticket/detail-ticket',compact('title','id','ticket'),'layout/app');
+    }
+
+    public function addDetailRequest(Request $request, DetailTicketService $service)
+    {
+        $result = $service->create($request->all());
+        return Response::json([
+            'status' => $result['status'],
+            'message' => $result['message'] ?? 'success',
+            'data' => $result['data'] ?? null,
+        ],$result['status']);
+    }
+
+    public function addDetailActual(Request $request, $id)
+    {
+
     }
 }

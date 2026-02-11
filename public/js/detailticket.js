@@ -1,0 +1,119 @@
+let list = null
+$(document).ready(function(){
+    flatpickr("#date_repair", {
+        dateFormat: "Y-m-d",
+        locale: "id", 
+        allowInput: true,
+        defaultDate: new Date()
+    });
+    crud()
+    getDetail()
+})
+
+function crud(){
+    $('#submitRequest').on('click', function(e){
+        e.preventDefault()
+        const btnAdd = $('#submitRequest')
+        const btnLoading = $('#loadingreq')
+        btnAdd.hide()
+        btnLoading.show()
+        var formData = new FormData($('#formreqrepair')[0])
+        $.ajax({
+            url: urlReqRepair,
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response){
+             if(response.status === 200){
+                    btnAdd.show()
+                    btnLoading.hide()
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success',
+                        text: response.message
+                    }).then((result)=>{
+                        getDetail()
+                    })
+                } else {
+                    btnAdd.show()
+                    btnLoading.hide()
+                    var errmes = ''
+                    if(response.status === 422 && typeof response.message === 'object'){
+                        for(var field in response.message){
+                            if(response.message.hasOwnProperty(field)){
+                                response.message[field].forEach(function(message){
+                                    errmes += message + '\n'
+                                })
+                            }
+                        }
+                    } else {
+                        errmes = 'An unexcpected error occured.'
+                    }
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: errmes.trim()
+                    })
+                }
+            }, error: function(err,res,message){
+                btnAdd.show()
+                btnLoading.hide()
+                var errmes = ''
+                if(err.responseJSON.status === 422 && typeof err.responseJSON.message === 'object'){
+                    for(var field in err.responseJSON.message){
+                        if(err.responseJSON.message.hasOwnProperty(field)){
+                            err.responseJSON.message[field].forEach(function(message){
+                                errmes += message + '\n'
+                            })
+                        }
+                    }
+                } else {
+                    errmes = err.responseJSON.message
+                }
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: errmes.trim()
+                })
+            }
+        })
+    })
+}
+
+function getDetail()
+{
+    $.ajax({
+        url : getReqRepair + '/' + hash,
+        type: 'GET',
+        dataType: 'json',
+        success: function(response){
+            $('#listreq').empty();
+            if(response.status == 200){
+                response.data.forEach((item) => {
+                    const list = `
+                    <li class="step-item ${item.length == 1 ? 'active' : ''}">
+                        <div class="h4 m-0">${item.detail_item}</div>
+                        <div class="text-secondary">${item.repair_req}</div>
+                    </li>
+                    `
+                    $('#listreq').append(list)
+                })
+            } else {
+                $('#listreq').append(`
+                <li class="step-item">
+                    <div class="h4 m-0">Not Found</div>
+                    <div class="text-secondary">Data not found</div>
+                </li>
+                `)
+            }
+        }, error: function(err,res,message){
+            $('#listreq').append(`
+                <li class="step-item">
+                    <div class="h4 m-0">Not Found</div>
+                    <div class="text-secondary">Data not found</div>
+                </li>
+                `)
+        }
+    })
+}

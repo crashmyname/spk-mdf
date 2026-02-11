@@ -18,6 +18,10 @@ class TablePlus
     protected int $perPage = 10;
     protected int $page = 1;
     protected array $filters = [];
+    protected array $addColumns = [];
+    protected array $editColumns = [];
+    protected array $removeColumns = [];
+    protected $transformRow = null;
 
     public static function of(string $table): self
     {
@@ -171,6 +175,34 @@ class TablePlus
         return $this;
     }
 
+    public function addColumn(string $column, callable $callback): self
+    {
+        $this->addColumns[$column] = $callback;
+        return $this;
+    }
+
+    public function editColumn(string $column, callable $callback): self
+    {
+        $this->editColumns[$column] = $callback;
+        return $this;
+    }
+
+    public function removeColumn(string|array $columns): self
+    {
+        $this->removeColumns = array_merge(
+            $this->removeColumns,
+            (array)$columns
+        );
+
+        return $this;
+    }
+
+    public function transformRow(callable $callback): self
+    {
+        $this->transformRow = $callback;
+        return $this;
+    }
+
     public function make(bool $jsonEncode = true)
     {
         try {
@@ -215,6 +247,28 @@ class TablePlus
             $stmt->bindValue(':_offset', $offset, PDO::PARAM_INT);
             $stmt->execute();
             $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $data = array_map(function ($row) {
+                foreach ($this->editColumns as $col => $callback) {
+                    if (array_key_exists($col, $row)) {
+                        $row[$col] = $callback($row[$col], $row);
+                    }
+                }
+
+                foreach ($this->addColumns as $col => $callback) {
+                    $row[$col] = $callback($row);
+                }
+
+                foreach ($this->removeColumns as $col) {
+                    unset($row[$col]);
+                }
+
+                if ($this->transformRow) {
+                    $row = call_user_func($this->transformRow, $row);
+                }
+
+                return $row;
+
+            }, $data);
 
             $response = [
                 'status' => $total > 0 ? 200 : 404,
