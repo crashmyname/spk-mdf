@@ -29,4 +29,9 @@ class Ticket extends BaseModel
     {
         return $this->hasMany(DetailTicket::class,'ticket_id','ticket_id');
     }
+
+    public function detailact()
+    {
+        return $this->hasMany(DetailAct::class, 'ticket_id','ticket_id');
+    }
 }

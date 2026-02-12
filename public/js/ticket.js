@@ -2,13 +2,29 @@
             const btn = e.target.closest('[data-bs-target="#modalEdit"]');
             if (!btn) return;
 
-            const user = JSON.parse(btn.dataset.user);
+            const ticket = JSON.parse(btn.dataset.ticket);
 
-            document.getElementById('uusername').value = user.username ?? '';
-            document.getElementById('uname').value = user.name ?? '';
-            document.getElementById('uemail').value = user.email ?? '';
-            document.getElementById('usection').value = user.section ?? '';
-            document.getElementById('urole').value = user.role ?? '';
+            document.getElementById('image').src = 'storage/public/attachment/'+ticket.sketch_item
+            document.getElementById('uno_order').value = ticket.no_order ?? '';
+            document.getElementById('uticket_hash').value = ticket.ticket_hash ?? '';
+            document.getElementById('udate_create').value = ticket.date_create ?? '';
+            const selectUser = document.getElementById('uuser_id');
+            selectUser.innerHTML = `
+                <option value="${ticket.user_id}" selected>
+                    ${ticket.username}
+                </option>
+            `;
+            document.getElementById('uname').value = ticket.name ?? '';
+            const selectMaterial = document.getElementById('umaterial');
+            selectMaterial.innerHTML = `
+                <option value="${ticket.material_id}" selected>
+                    ${ticket.mold_number+'-'+ticket.model_name}
+                </option>
+            `;
+            document.getElementById('uaction').value = ticket.action ?? '';
+            document.getElementById('utype_ticket').value = ticket.type_ticket ?? '';
+            document.getElementById('ulot_shot').value = ticket.lot_shot ?? '';
+            document.getElementById('utotal_shot').value = ticket.total_shot ?? '';
         });
         const table = new TablePlus({
             url : getTicket,
@@ -22,7 +38,7 @@
                             class="btn btn-sm btn-yellow"
                             data-bs-toggle="modal"
                             data-bs-target="#modalEdit"
-                            data-user='${JSON.stringify(row)}'>
+                            data-ticket='${JSON.stringify(row)}'>
                             Edit
                         </button>
                         <button type="submit" class="btn btn-sm btn-danger deleteticket" data-ticket="${row.ticket_hash}">Delete</button>
@@ -162,7 +178,7 @@ function crud()
         btnAdd.hide()
         btnLoading.show()
         $.ajax({
-            url : editTicket +'/'+ $('#uticket').val(),
+            url : editTicket +'/'+ $('#uticket_hash').val(),
             type: 'POST',
             data : form,
             processData: false,

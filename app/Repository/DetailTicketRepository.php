@@ -2,6 +2,7 @@
 
 namespace App\Repository;
 
+use App\Models\DetailAct;
 use App\Models\DetailTicket;
 use Bpjs\Framework\Helpers\Crypto;
 
@@ -30,5 +31,30 @@ class DetailTicketRepository
     public function destroy()
     {
 
+    }
+
+    public function req($id)
+    {
+        $detail = DetailTicket::query()->where('ticket_id','=',$id)->get();
+        return $detail;
+    }
+
+    public function act($id)
+    {
+        $detailact = DetailAct::query()->where('ticket_id','=',$id)->get();
+        return $detailact;
+    }
+
+    public function createAct(array $data)
+    {
+        $req = [
+            'ticket_id' => Crypto::decrypt($data['hashact']),
+            'act_repair' => $data['act_repair'],
+            'date_act' => $data['date_act'],
+            'act_by' => $data['act_by'],
+            'total_hours_act' => $data['total_hours_act'] ?? null,
+        ];
+        $detailact = DetailAct::create($req);
+        return $detailact->toArray();
     }
 }

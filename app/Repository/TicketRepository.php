@@ -8,6 +8,7 @@ use App\Models\Approval;
 use App\Models\Materials;
 use App\Models\Ticket;
 use Bpjs\Framework\Helpers\Char;
+use Bpjs\Framework\Helpers\Date;
 use Bpjs\Framework\Helpers\Session;
 
 class TicketRepository
@@ -77,20 +78,24 @@ class TicketRepository
         return $ticket;
     }
 
-    public function updateTicket(array $data)
+    public function findById($id)
     {
-        $conditions = [
-            'ticket_id' => $data['ticket_id']
-        ];
-        $ticket = Ticket::find($conditions)
+        $ticket = Ticket::find($id);
+        return $ticket;
+    }
+
+    public function updateTicket(array $data, $id)
+    {
+        $data['updated_at'] = Date::Now();
+        $ticket = Ticket::find($id)
                     ->update($data);
         return $ticket;
     }
 
     public function deleteTicket($id)
     {
-        $ticket = Ticket::query()->load(['approval'])
-        ->where('ticket_id','=',$id)->deleteWithRelations();
-        return $ticket;
+        $ticket = Ticket::query()->load(['approval','detail','detailact'])
+        ->where('ticket_id','=',$id)->first();
+        return $ticket->deleteWithRelations();
     }
 }

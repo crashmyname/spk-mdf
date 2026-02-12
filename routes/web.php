@@ -48,6 +48,7 @@ Route::group([AuthMiddleware::class], function(){
     Route::post('/detail/ticket/req',[TicketController::class,'addDetailRequest'])->name('detail.ticket.req');
     Route::post('/detail/ticket/act',[TicketController::class,'addDetailActual'])->name('detail.ticket.act');
     Route::get('/get/detail/{id}',[DetailTicketController::class,'getDetail'])->name('detail.ticket.get');
+    Route::get('/get/detailact/{id}',[DetailTicketController::class,'getDetailAct'])->name('detailact.ticket.get');
     // API GET Employee
     Route::post('/emp',[ApiController::class, 'getEmployee'])->name('getemp');
 });

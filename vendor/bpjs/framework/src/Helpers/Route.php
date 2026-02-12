@@ -14,6 +14,8 @@ class Route
     private static $groupMiddlewares = []; 
     private static $lastRouteMethod = null;
     private static $lastRouteUri = null;
+    private static $currentRoute = [];
+
 
     public static function init($prefix = '')
     {
@@ -162,6 +164,11 @@ class Route
         return $this;
     }
 
+    public static function current()
+    {
+        return self::$currentRoute;
+    }
+
     public static function dispatch(): \Bpjs\Core\Response
     {
         try {
@@ -183,6 +190,12 @@ class Route
             $route = self::findRoute($method, $uri);
 
             if ($route) {
+                self::$currentRoute = [
+                    'method' => $method,
+                    'uri' => $uri,
+                    'handler' => $route['handler'],
+                    'middlewares' => $route['middlewares'] ?? []
+                ];
                 $handler = $route['handler'];
                 $middlewares = $route['middlewares'];
                 $params = $route['params'] ?? [];

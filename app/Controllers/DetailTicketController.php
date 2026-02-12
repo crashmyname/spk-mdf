@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\DTO\DetailTicket\DetailTicketDTO;
 use App\Models\DetailTicket;
+use App\Services\DetailTicketService;
 use Bpjs\Framework\Helpers\BaseController;
 use Bpjs\Core\Request;
 use Bpjs\Framework\Helpers\Crypto;
@@ -19,23 +20,26 @@ class DetailTicketController extends BaseController
         // Tampilkan semua resource
     }
 
-    public function getDetail($id)
+    public function getDetail($id, DetailTicketService $service)
     {
         $decId = Crypto::decrypt($id);
-        $detail = DetailTicket::query()->where('ticket_id','=',$decId)->get();
-        if($detail){
-            return Response::json([
-                'status' => 200,
-                'message' => 'data found',
-                'data' => DetailTicketDTO::collection($detail)
-            ],200);
-        } else {
-            return Response::json([
-                'status' => 404,
-                'message' => 'data not found',
-                'data' => []
-            ],404);
-        }
+        $result = $service->getDetailReq($decId);
+        return Response::json([
+            'status' => $result['status'],
+            'message' => $result['message'] ?? 'success',
+            'data' => $result['data'] ?? null,
+        ],$result['status']);
+    }
+
+    public function getDetailAct($id, DetailTicketService $service)
+    {
+        $decId = Crypto::decrypt($id);
+        $result = $service->getDetailAct($decId);
+        return Response::json([
+            'status' => $result['status'],
+            'message' => $result['message'] ?? 'success',
+            'data' => $result['data'] ?? null,
+        ],$result['status']);
     }
 
     public function show($id)

@@ -22,7 +22,6 @@ class TicketController extends BaseController
     {
         $title = 'SPK';
         $material = $materialService->getMaterial();
-        // $ticket = Ticket::query()->load(['user','material','approval'])->get();
         return view('ticket/ticket',compact('title','material'),'layout/app');
     }
 
@@ -43,10 +42,10 @@ class TicketController extends BaseController
 
     public function getTicket(Request $request)
     {
-        $result = TablePlus::of('ticket')
+       TablePlus::of('ticket')
                         ->leftJoin('users','users.user_id','=','ticket.user_id')
                         ->leftJoin('material','material.material_id','=','ticket.material_id')
-                        ->select('no_order','date_create','users.username','users.name','action','type_ticket','material.mold_number','material.model_name','material.lamp_name','material.type_material','lot_shot','total_shot','sketch_item','options','ticket_id')
+                        ->select('no_order','date_create','users.username','users.name','action','type_ticket','material.mold_number','material.model_name','material.lamp_name','material.type_material','lot_shot','total_shot','sketch_item','options','ticket_id','ticket.user_id','ticket.material_id')
                         ->searchable([
                             'no_order',
                             'date_create',
@@ -75,7 +74,8 @@ class TicketController extends BaseController
 
     public function update(Request $request, $id, TiketService $service)
     {
-        $result = $service->updateTicket($id,$request->all());
+        $decId = Crypto::decrypt($id);
+        $result = $service->updateTicket($decId,$request->all(), $request->file('file_sketch'));
         return Response::json([
             'status' => $result['status'],
             'message' => $result['message'] ?? 'success',
@@ -85,7 +85,8 @@ class TicketController extends BaseController
 
     public function destroy($id, TiketService $service)
     {
-        $result = $service->deleteTicket($id);
+        $decId = Crypto::decrypt($id);
+        $result = $service->deleteTicket($decId);
         return Response::json([
             'status' => $result['status'],
             'message' => $result['message'] ?? 'success',
@@ -110,8 +111,13 @@ class TicketController extends BaseController
         ],$result['status']);
     }
 
-    public function addDetailActual(Request $request, $id)
+    public function addDetailActual(Request $request, DetailTicketService $service)
     {
-
+        $result = $service->createAct($request->all());
+        return Response::json([
+            'status' => $result['status'],
+            'message' => $result['message'] ?? 'success',
+            'data' => $result['data'] ?? null,
+        ],$result['status']);
     }
 }

@@ -397,6 +397,7 @@ class BaseModel
                 $sql .= ' OFFSET ' . (int) $this->offset;
             }
 
+            $start = microtime(true);
             $stmt = $this->connection->prepare($sql);
 
             foreach ($this->whereParams as $key => $value) {
@@ -404,6 +405,14 @@ class BaseModel
             }
 
             $stmt->execute();
+            $duration = round((microtime(true) - $start) * 1000, 2);
+
+            QueryLogger::add(
+                $sql,
+                $this->whereParams,
+                $duration,
+                static::class
+            );
 
             if (!$asModel && empty($this->with)) {
                 return $stmt->fetchAll($fetchStyle);

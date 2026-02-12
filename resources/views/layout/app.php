@@ -125,7 +125,7 @@ use Bpjs\Framework\Helpers\Session;
                 </a>
                 <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
                   <a href="" class="dropdown-item">Profile</a>
-                  <form action="" method="post">
+                  <form action="<?= route('auth.logout')?>" method="post">
                     <?= csrf()?>
                     <button class="dropdown-item">Logout</button>
                   </form>

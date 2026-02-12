@@ -80,6 +80,7 @@ use Bpjs\Framework\Helpers\Session;
                     <div class="tab-pane" id="tabs-actual" role="tabpanel">
                         <h4>Actual Repair</h4>
                         <form class="card" id="formactrepair" action="" method="POST" enctype="multipart/form-data">
+                            <?= csrf()?>
                             <div class="card-header">
                                 <h3 class="card-title">Add Actual Repair</h3>
                             </div>
@@ -87,7 +88,8 @@ use Bpjs\Framework\Helpers\Session;
                                 <div class="mb-3">
                                     <label class="form-label required">Actual Repair</label>
                                     <div>
-                                        <input type="text" name="actual_repair" id="actual_repair"
+                                        <input type="hidden" name="hashact" id="hashact" value="<?= $id?>">
+                                        <input type="text" name="act_repair" id="act_repair"
                                             class="form-control">
                                     </div>
                                 </div>
@@ -101,15 +103,29 @@ use Bpjs\Framework\Helpers\Session;
                                 <div class="mb-3">
                                     <label class="form-label required">Actual By</label>
                                     <div>
-                                        <input type="text" readonly name="actual_by" id="actual_by"
+                                        <input type="text" readonly name="act_by" id="act_by"
                                             value="<?= Session::user()->name ?>" class="form-control">
                                     </div>
                                 </div>
                             </div>
                             <div class="card-footer text-end">
                                 <button type="submit" class="btn btn-primary" id="submitActual">Submit</button>
+                                <button class="btn btn-primary" style="display: none;" id="loadingact" disabled>
+                                    <div class="spinner-border me-2" role="status"></div>
+                                    <strong>Loading...</strong>
+                                </button>
                             </div>
                         </form>
+                        <hr>
+                        <h3>Actual</h3>
+                        <div class="card">
+                            <div class="card-body">
+                                <h3 class="card-title">List Repair</h3>
+                                <ul class="steps steps-vertical" id="listact">
+                                    
+                                </ul>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -118,7 +134,9 @@ use Bpjs\Framework\Helpers\Session;
 </div>
 <script>
     var urlReqRepair = '<?= route('detail.ticket.req')?>'
+    var urlActRepair = '<?= route('detail.ticket.act')?>'
     var getReqRepair = '<?= url('get/detail')?>'
+    var getActRepair = '<?= url('get/detailact')?>'
     var hash = '<?= $id?>'
 </script>
 <script src="<?= asset_v('js/detailticket.js')?>"></script>

@@ -162,34 +162,110 @@ use Bpjs\Framework\Helpers\Session;
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
-                        <div class="mb-3">
-                            <label class="form-label">Mold Number</label>
-                            <input type="text" class="form-control" name="mold_number" id="umold_number" placeholder="Your Mold Number">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Lamp Name</label>
-                            <input type="text" class="form-control" name="lamp_name" id="ulamp_name"
-                                placeholder="Your Lamp name">
-                        </div>
                         <div class="row">
                             <div class="col-lg-6">
                                 <div class="mb-3">
-                                    <label class="form-label">Model Name</label>
-                                    <input type="text" class="form-control" name="model_name" id="umodel_name">
+                                    <label class="form-label">No Order</label>
+                                    <input type="hidden" name="ticket_hash" id="uticket_hash">
+                                    <input type="text" class="form-control" name="no_order" id="uno_order" placeholder="Your No Order">
                                 </div>
                             </div>
                             <div class="col-lg-6">
                                 <div class="mb-3">
-                                    <label class="form-label">Type</label>
+                                    <label class="form-label">Date Create</label>
+                                    <input type="date" class="form-control" name="date_create" id="udate_create">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-lg-6">
+                                <div class="mb-3">
+                                    <label class="form-label">NIK</label>
+                                    <select name="user_id" id="uuser_id" class="form-control">
+                                       
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Nama</label>
+                                    <input type="text" class="form-control" name="name" id="uname" readonly>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-lg-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Material</label>
+                                    <select name="material" id="umaterial" class="form-control">
+                                        <?php foreach($material as $mt): ?>
+                                            <option value="<?= $mt->mold_number?>"><?= $mt->mold_number.'-'.$mt->model_name?></option>
+                                        <?php endforeach;?>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Action</label>
                                     <div class="input-group input-group-flat">
-                                        <input type="text" name="type_material" class="form-control" id="utype_material">
+                                        <select name="action" id="uaction" class="form-control">
+                                            <option value="" hidden disabled selected>Pilih</option>
+                                            <option value="maintenance">Maintenance</option>
+                                            <option value="repair">Repair</option>
+                                            <option value="modification">Modification</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-lg-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Type Ticket</label>
+                                    <select name="type_ticket" id="utype_ticket" class="form-control">
+                                        <option hidden disabled selected value="">Pilih</option>
+                                        <option value="MOLD REGULER">MOLD REGULER</option>
+                                        <option value="NEW MOLD">NEW MOLD</option>
+                                        <option value="CUCI EF">CUCI EF</option>
+                                        <option value="TANPA CUCI EF">TANPA CUCI EF</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Lot shot</label>
+                                    <div class="input-group input-group-flat">
+                                        <input type="number" name="lot_shot" id="ulot_shot" class="form-control">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-lg-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Total Shot</label>
+                                    <input type="number" name="total_shot" id="utotal_shot" class="form-control">
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Sketch Item</label>
+                                    <div class="row row-cards mb-3">
+                                        <div class="col-sm-12 col-lg-12">
+                                            <div class="card card-sm">
+                                            <a href="#" class="d-block"><img src="" id="image" class="card-img-top"></a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="input-group input-group-flat">
+                                        <input type="file" name="file_sketch" id="ufile_sketch" class="form-control">
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="submit" id="editticket" class="btn btn-yellow ms-auto">
+                        <button type="submit" id="editticket" class="btn btn-primary ms-auto">
                             <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24"
                                 viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
                                 stroke-linecap="round" stroke-linejoin="round">
@@ -197,9 +273,9 @@ use Bpjs\Framework\Helpers\Session;
                                 <path d="M12 5l0 14" />
                                 <path d="M5 12l14 0" />
                             </svg>
-                            Update Ticket
+                            Update ticket
                         </button>
-                        <button class="btn btn-yellow ms-auto" style="display: none;" id="loadingedit" disabled>
+                        <button class="btn btn-primary ms-auto" style="display: none;" id="loadingedit" disabled>
                             <div class="spinner-border me-2" role="status"></div>
                             <strong>Loading...</strong>
                         </button>

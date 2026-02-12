@@ -37,22 +37,33 @@ class TiketService
         ];
     }
 
-    public function updateTicket($id, array $data)
+    public function updateTicket($id, array $data,$file)
     {
+        $oldTicket = $this->ticketrepo->findById($id);
+        $fileName = $oldTicket->sketch_item;
+        if(isset($file) && !empty($file['name'])){
+            $fileName = $file['name'];
+            $this->upload($file);
+            if($oldTicket->sketch_item){
+                $oldPath = storage_path('attachment/'.$oldTicket->sketch_item);
+                if(file_exists($oldPath)){
+                    unlink($oldPath);
+                }
+            }
+        }
         $dto = new TicketDTO(
-            $data['no_order'],
-            $data['date_create'],
-            $data['user_id'],
-            $data['action'],
-            $data['type_ticket'],
-            $data['material_id'],
-            $data['lot_shot'],
-            $data['total_shot'],
-            $data['sketch_item'],
-            $data['options'],
+            $data['no_order'] ?? $oldTicket->no_order,
+            $data['date_create'] ?? $oldTicket->date_create,
+            $data['user_id'] ?? $oldTicket->user_id,
+            $data['action'] ?? $oldTicket->action,
+            $data['type_ticket'] ?? $oldTicket->type_ticket,
+            $data['material'] ?? $oldTicket->material,
+            $data['lot_shot'] ?? $oldTicket->lot_shot,
+            $data['total_shot'] ?? $oldTicket->total_shot,
+            $fileName,
+            $data['options'] ?? $oldTicket->options,
         );
-        // vd($data);
-        $ticket = $this->ticketrepo->updateTicket(array($dto));
+        $ticket = $this->ticketrepo->updateTicket($dto->toArray(),$id);
         return [
             'success' => true,
             'status' => 200,

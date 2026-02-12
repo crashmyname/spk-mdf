@@ -15,7 +15,112 @@ class BaseController {
         $isJson = isset($_SERVER['HTTP_ACCEPT']) 
             && str_contains($_SERVER['HTTP_ACCEPT'], 'application/json');
 
+        $traceFull = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT);
+
+        $routeInfo = Route::current();
+
+        $routeName = null;
+        $routeController = null;
+        $routeFile = null;
+        $routeLine = null;
+        $routeMiddlewares = [];
+        $controllerInfo = null;
+        $serviceList = [];
+        $modelList = [];
+        $dbQueries = QueryLogger::all();
+
+        foreach ($traceFull as $trace) {
+
+            if (!isset($trace['class'])) continue;
+
+            $class = $trace['class'];
+
+            if (
+                $controllerInfo === null &&
+                str_contains($class, 'Controller') &&
+                !str_contains($class, 'BaseController')
+            ) {
+                $controllerInfo = $class.'@'.($trace['function'] ?? 'unknown');
+            }
+
+            if (
+                str_contains($class, 'Service') ||
+                str_contains($class, '\\Services\\')
+            ) {
+                $serviceList[] = $class;
+            }
+
+            try {
+
+                if (
+                    class_exists($class) &&
+                    (
+                        str_contains($class, 'Model') ||
+                        is_subclass_of($class, \Bpjs\Framework\Helpers\BaseModel::class)
+                    )
+                ) {
+                    $modelList[] = $class;
+                }
+
+            } catch (\Throwable $e) {}
+        }
+
+        $serviceList = array_values(array_unique($serviceList));
+        $modelList   = array_values(array_unique($modelList));
+        $formattedQueries = [];
+
+            foreach ($dbQueries as $query) {
+
+                if (!is_array($query)) continue;
+
+                $sql = $query['sql'] ?? '';
+
+                $params = !empty($query['params'])
+                    ? json_encode($query['params'])
+                    : '';
+
+                $time = $query['time_ms'] ?? null;
+
+                $model = $query['model'] ?? null;
+
+                $formattedQueries[] =
+                    $sql .
+                    ($params ? " | params: {$params}" : '') .
+                    ($time ? " | {$time} ms" : '') .
+                    ($model ? " | model: {$model}" : '');
+            }
+
+            $groupedQueries = [];
+
+            foreach ($dbQueries as $query) {
+
+                if (!is_array($query)) continue;
+
+                $key = ($query['model'] ?? 'raw').'|'.($query['sql'] ?? '');
+
+                if (!isset($groupedQueries[$key])) {
+                    $groupedQueries[$key] = [
+                        'sql' => $query['sql'] ?? '',
+                        'model' => $query['model'] ?? null,
+                        'count' => 0,
+                        'total_time' => 0,
+                        'items' => []
+                    ];
+                }
+
+                $groupedQueries[$key]['count']++;
+                $groupedQueries[$key]['total_time'] += $query['time_ms'] ?? 0;
+                $groupedQueries[$key]['items'][] = $query;
+            }
+
+            $dbQueries = array_values($groupedQueries);
+
+
+        /* =====================
+        JSON MODE
+        ===================== */
         if ($isAjax || $isJson) {
+
             $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
             $caller = $trace[1] ?? [];
 
@@ -24,11 +129,18 @@ class BaseController {
                 'type' => gettype($data),
                 'data' => $data,
                 'debug' => [
+                    'controller' => $controllerInfo,
+                    'services' => $serviceList,
+                    'models' => $modelList,
+                    'queries' => $dbQueries,
                     'file' => $caller['file'] ?? null,
                     'line' => $caller['line'] ?? null,
                     'function' => $caller['function'] ?? null,
                     'timestamp' => date('Y-m-d H:i:s'),
                     'memory_usage' => memory_get_usage(true),
+                    'execution_time_ms' => defined('BPJS_START')
+                        ? round((microtime(true) - BPJS_START) * 1000, 2)
+                        : null,
                     'request' => [
                         'method' => $_SERVER['REQUEST_METHOD'] ?? null,
                         'uri' => $_SERVER['REQUEST_URI'] ?? null,
@@ -41,177 +153,296 @@ class BaseController {
             echo json_encode($response, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
             exit;
         }
-        
+
+        /* =====================
+        HTML MODE
+        ===================== */
+
+        $executionTime = defined('BPJS_START')
+            ? round((microtime(true) - BPJS_START) * 1000, 2)
+            : null;
+
+        if (!empty($routeInfo)) {
+
+            if (is_array($routeInfo['handler'])) {
+
+                $controller = $routeInfo['handler'][0];
+                $method = $routeInfo['handler'][1];
+
+                $routeController = $controller.'@'.$method;
+
+                try {
+                    $reflection = new \ReflectionMethod($controller, $method);
+                    $routeFile = $reflection->getFileName();
+                    $routeLine = $reflection->getStartLine();
+                } catch (\Throwable $e) {}
+            }
+
+            $routeMiddlewares = array_map(function ($m) {
+                return is_string($m) ? $m : 'Closure';
+            }, $routeInfo['middlewares']);
+        }
+        $debugInfo = [
+            'URL' => ($_SERVER['REQUEST_SCHEME'] ?? 'http').'://'.($_SERVER['HTTP_HOST'] ?? '').($_SERVER['REQUEST_URI'] ?? ''),
+            'Method' => $_SERVER['REQUEST_METHOD'] ?? null,
+            'Execution Time' => $executionTime . ' ms',
+            'Memory Usage' => round(memory_get_usage(true)/1024/1024,2).' MB',
+            'Peak Memory' => round(memory_get_peak_usage(true)/1024/1024,2).' MB',
+            'User Agent' => $_SERVER['HTTP_USER_AGENT'] ?? null,
+            'Query String' => $_SERVER['QUERY_STRING'] ?? null,
+            'Controller' => $controllerInfo,
+            'Route Method' => $routeInfo['method'] ?? null,
+            'Route URI' => $routeInfo['uri'] ?? null,
+            'Route Handler' => $routeController,
+            'Route File' => $routeFile ? basename($routeFile).':'.$routeLine : null,
+            'Route Middlewares' => implode(', ', $routeMiddlewares),
+        ];
+
+        $headers = function_exists('headers_list') ? headers_list() : [];
+
+        /* =====================
+        STYLE
+        ===================== */
         echo '
-            <style>
-            .pretty-wrapper{
-                background:#1e1e1e;
-                border-radius:10px;
-                padding:15px;
-                font-family: monospace;
-                color:#e6e6e6;
-                box-shadow:0 4px 15px rgba(0,0,0,0.4);
-            }
+        <style>
+        .pretty-wrapper{
+            background:#1e1e1e;
+            border-radius:10px;
+            padding:15px;
+            font-family: monospace;
+            color:#e6e6e6;
+            box-shadow:0 4px 15px rgba(0,0,0,0.4);
+        }
 
-            .pretty-header{
-                display:flex;
-                justify-content:space-between;
-                align-items:center;
-                margin-bottom:10px;
-                border-bottom:1px solid #333;
-                padding-bottom:8px;
-            }
+        .pretty-debug-panel{
+            background:#252526;
+            border-radius:8px;
+            padding:10px;
+            margin-bottom:15px;
+            font-size:13px;
+        }
 
-            .pretty-title{
-                font-weight:bold;
-                font-size:16px;
-            }
+        .pretty-debug-row{
+            display:flex;
+            justify-content:space-between;
+            border-bottom:1px solid #333;
+            padding:4px 0;
+        }
 
-            .pretty-toolbar button{
-                background:#333;
-                border:none;
-                color:#fff;
-                padding:5px 10px;
-                margin-left:5px;
-                border-radius:5px;
-                cursor:pointer;
-                font-size:12px;
-            }
+        .pretty-debug-key{ color:#4fc1ff; }
+        .pretty-debug-val{ color:#dcdcaa; text-align:right; }
 
-            .pretty-toolbar button:hover{
-                background:#555;
-            }
+        .pretty-header{
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            margin-bottom:10px;
+            border-bottom:1px solid #333;
+            padding-bottom:8px;
+        }
 
-            .pretty-print{
-                font-size:14px;
-                line-height:1.6;
-            }
+        .pretty-title{ font-weight:bold; font-size:16px; }
 
-            .key{color:#66d9ef;}
-            .string{color:#a6e22e;}
-            .number{color:#fd971f;}
-            .bool{color:#f92672;}
-            .null{color:#75715e;}
+        .pretty-toolbar button{
+            background:#333;
+            border:none;
+            color:#fff;
+            padding:5px 10px;
+            margin-left:5px;
+            border-radius:5px;
+            cursor:pointer;
+            font-size:12px;
+        }
 
-            .node{
-                margin-left:18px;
-                border-left:1px dashed #333;
-                padding-left:8px;
-                display:none;
-            }
+        .pretty-print{ font-size:14px; line-height:1.6; }
 
-            .collapsible{
-                cursor:pointer;
-                color:#ccc;
-            }
+        .key{color:#66d9ef;}
+        .string{color:#a6e22e;}
+        .number{color:#fd971f;}
+        .bool{color:#f92672;}
+        .null{color:#75715e;}
 
-            .badge{
-                background:#444;
-                padding:2px 6px;
-                font-size:11px;
-                border-radius:4px;
-                margin-left:5px;
-            }
-            </style>
-            ';
+        .node{
+            margin-left:18px;
+            border-left:1px dashed #333;
+            padding-left:8px;
+            display:none;
+        }
 
-            echo '
-            <script>
-            function toggleAll(expand){
-                document.querySelectorAll(".node").forEach(el=>{
-                    el.style.display = expand ? "block" : "none";
-                });
-            }
+        .collapsible{ cursor:pointer; color:#ccc; }
 
-            function toggleNode(el){
-                let node = el.nextElementSibling;
-                node.style.display = node.style.display === "block" ? "none" : "block";
-            }
+        .badge{
+            background:#444;
+            padding:2px 6px;
+            font-size:11px;
+            border-radius:4px;
+            margin-left:5px;
+        }
+        </style>
+        ';
 
-            function copyJson(){
-                navigator.clipboard.writeText(document.getElementById("json-source").textContent);
-                alert("Copied JSON!");
-            }
-            </script>
-            ';
+        echo '
+        <script>
+        function toggleAll(expand){
+            document.querySelectorAll(".node").forEach(el=>{
+                el.style.display = expand ? "block" : "none";
+            });
+        }
 
-            function format_data($data){
+        function toggleNode(el){
+            let node = el.nextElementSibling;
+            if(node) node.style.display = node.style.display === "block" ? "none" : "block";
+        }
 
-                $result = "";
+        function copyJson(){
+            navigator.clipboard.writeText(document.getElementById("json-source").textContent);
+            alert("Copied JSON!");
+        }
+        </script>
+        ';
 
-                if(is_array($data) || is_object($data)){
+        /* =====================
+        FORMATTER
+        ===================== */
+        function format_data($data){
+            $result = "";
 
-                    foreach($data as $key => $value){
+            if(is_array($data) || is_object($data)){
+                foreach($data as $key => $value){
 
-                        $type = gettype($value);
+                    $type = gettype($value);
 
-                        $result .= '<div>';
+                    $result .= '<div>';
+                    $result .= '<span class="collapsible" onclick="toggleNode(this)">';
+                    $result .= '<span class="key">['.htmlspecialchars($key).']</span>';
+                    $result .= '<span class="badge">'.$type.'</span>';
+                    $result .= '</span>';
 
-                        $result .= '<span class="collapsible" onclick="toggleNode(this)">';
-                        $result .= '<span class="key">['.htmlspecialchars($key).']</span>';
-                        $result .= '<span class="badge">'.$type.'</span>';
-                        $result .= '</span>';
-
-                        if(is_array($value) || is_object($value)){
-
-                            $result .= '<div class="node">';
-                            $result .= format_data((array)$value);
-                            $result .= '</div>';
-
-                        }elseif(is_string($value)){
-                            $result .= ' => <span class="string">"'.htmlspecialchars($value).'"</span>';
-                        }elseif(is_numeric($value)){
-                            $result .= ' => <span class="number">'.$value.'</span>';
-                        }elseif(is_bool($value)){
-                            $result .= ' => <span class="bool">'.($value?'true':'false').'</span>';
-                        }else{
-                            $result .= ' => <span class="null">null</span>';
-                        }
-
+                    if(is_array($value) || is_object($value)){
+                        $result .= '<div class="node">';
+                        $result .= format_data((array)$value);
                         $result .= '</div>';
                     }
-                }
+                    elseif(is_string($value)){
+                        $result .= ' => <span class="string">"'.htmlspecialchars($value).'"</span>';
+                    }
+                    elseif(is_numeric($value)){
+                        $result .= ' => <span class="number">'.$value.'</span>';
+                    }
+                    elseif(is_bool($value)){
+                        $result .= ' => <span class="bool">'.($value?'true':'false').'</span>';
+                    }
+                    else{
+                        $result .= ' => <span class="null">null</span>';
+                    }
 
-                return $result;
+                    $result .= '</div>';
+                }
             }
 
-            if (is_object($data)) {
-                $reflection = new ReflectionClass($data);
-                $properties = $reflection->getProperties();
-                $formatted_data = [];
+            return $result;
+        }
 
-                foreach ($properties as $property) {
-                    $property->setAccessible(true);
-                    $formatted_data[$property->getName()] = $property->getValue($data);
-                }
-            } else {
-                $formatted_data = $data;
+        if (is_object($data)) {
+            $reflection = new ReflectionClass($data);
+            $properties = $reflection->getProperties();
+            $formatted_data = [];
+
+            foreach ($properties as $property) {
+                $property->setAccessible(true);
+                $formatted_data[$property->getName()] = $property->getValue($data);
             }
+        } else {
+            $formatted_data = $data;
+        }
 
-            $jsonSource = htmlspecialchars(json_encode($data, JSON_PRETTY_PRINT));
+        $jsonSource = htmlspecialchars(json_encode($data, JSON_PRETTY_PRINT));
 
-            echo '<div class="pretty-wrapper">';
+        echo '<div class="pretty-wrapper">';
 
-            echo '<div class="pretty-header">';
-            echo '<div class="pretty-title">Debug Viewer</div>';
+        echo '<div class="pretty-header">';
+        echo '<div class="pretty-title">Debug Viewer</div>';
 
-            echo '<div class="pretty-toolbar">
-                    <button onclick="toggleAll(true)">Expand All</button>
-                    <button onclick="toggleAll(false)">Collapse All</button>
-                    <button onclick="copyJson()">Copy JSON</button>
+        echo '<div class="pretty-toolbar">
+                <button onclick="toggleAll(true)">Expand All</button>
+                <button onclick="toggleAll(false)">Collapse All</button>
+                <button onclick="copyJson()">Copy JSON</button>
+            </div>';
+
+        echo '</div>';
+
+        echo '<pre id="json-source" style="display:none">'.$jsonSource.'</pre>';
+
+        echo '<div class="pretty-print">';
+        echo format_data($formatted_data);
+        echo '</div><br>';
+
+        echo '<div class="pretty-debug-panel">';
+        echo '<b style="color:#9cdcfe;">HTTP Debug Info</b>';
+
+        foreach($debugInfo as $k => $v){
+            echo '<div class="pretty-debug-row">';
+            echo '<span class="pretty-debug-key">'.$k.'</span>';
+            echo '<span class="pretty-debug-val">'.htmlspecialchars((string)$v).'</span>';
+            echo '</div>';
+        }
+
+        if(!empty($serviceList)){
+            echo '<div class="pretty-debug-row">
+                    <span>Services</span>
+                    <span>'.implode(', ', $serviceList).'</span>
                 </div>';
+        }
 
-            echo '</div>';
+        if(!empty($modelList)){
+            echo '<div class="pretty-debug-row">
+                    <span>Models</span>
+                    <span>'.implode(', ', $modelList).'</span>
+                </div>';
+        }
 
-            echo '<pre id="json-source" style="display:none">'.$jsonSource.'</pre>';
+        if(!empty($dbQueries)){
+            echo '<div style="margin-top:8px;color:#c586c0;">Queries</div>';
 
-            echo '<div class="pretty-print">';
-            echo format_data($formatted_data);
-            echo '</div>';
+            foreach($dbQueries as $q){
 
-            echo '</div>';
+                echo '<div class="collapsible" onclick="toggleNode(this)">';
 
-            exit;
+                echo '<b>SQL:</b> '.htmlspecialchars($q['sql']);
+                echo ' <span class="badge">'.$q['count'].'x</span>';
+                echo ' <span class="badge">'.round($q['total_time'],2).' ms</span>';
+
+                if(!empty($q['model'])){
+                    echo ' <span class="badge">'.$q['model'].'</span>';
+                }
+
+                echo '</div>';
+
+                echo '<div class="node">';
+
+                foreach($q['items'] as $item){
+
+                    echo '<div class="pretty-debug-row">';
+                    echo '<span>Params</span>';
+                    echo '<span>'.htmlspecialchars(json_encode($item['params'] ?? [])).'</span>';
+                    echo '</div>';
+
+                    echo '<div class="pretty-debug-row">';
+                    echo '<span>Time</span>';
+                    echo '<span>'.($item['time_ms'] ?? 0).' ms</span>';
+                    echo '</div>';
+
+                    echo '<hr style="border-color:#333">';
+                }
+
+                echo '</div>';
+            }
+        }
+
+        echo '</div>';
+        echo '</div>';
+
+        exit;
     }
 
     public function redirect($url)

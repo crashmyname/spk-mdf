@@ -3,6 +3,7 @@
 namespace App\Services;
 use App\Models\Materials;
 use App\Repository\MaterialRepository;
+use Bpjs\Framework\Helpers\Date;
 use Bpjs\Framework\Helpers\Validator;
 
 class MaterialService
@@ -48,6 +49,7 @@ class MaterialService
             'model_name' => $data['model_name'],
             'lamp_name' => $data['lamp_name'],
             'type_material' => $data['type_material'],
+            'updated_at' => Date::Now(),
         ];
         $material = $this->repo->updateMaterial($attributes);
         return [
