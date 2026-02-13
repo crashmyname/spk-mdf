@@ -6,6 +6,7 @@ use App\Controllers\AuthController;
 use App\Controllers\DetailTicketController;
 use App\Controllers\HomeController;
 use App\Controllers\MaterialController;
+use App\Controllers\ReportController;
 use App\Controllers\TicketController;
 use App\Controllers\UserController;
 use Bpjs\Framework\Helpers\AuthMiddleware;
@@ -57,6 +58,9 @@ Route::group([AuthMiddleware::class], function(){
 
     // Apporval
     Route::get('/ticket-approval',[ApprovalController::class,'index'])->name('appr.index');
+
+    // Report
+    Route::get('/report',[ReportController::class,'index'])->name('report');
     // API GET Employee
     Route::post('/emp',[ApiController::class, 'getEmployee'])->name('getemp');
 });

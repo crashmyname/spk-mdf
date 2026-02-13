@@ -6,7 +6,8 @@
         "php" : "^8.0",
         "firebase/php-jwt": "^6.10",
         "fadli-dev/wilayah-id": "^1.0",
-        "bpjs/framework": "^1.0"
+        "bpjs/framework": "^1.0",
+        "dompdf/dompdf": "^3.1"
     },
     "license": "MIT",
     "autoload": {
