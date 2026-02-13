@@ -10,12 +10,21 @@
         Order allow,deny
         Deny from all
     </FilesMatch>
+    # Blokir file extension php kecuali index.php
+    <FilesMatch "\.php$">
+        Require all denied
+    </FilesMatch>
+
+    <Files "index.php">
+        Require all granted
+    </Files>
 
     # Blokir akses langsung ke folder selain public
-    RewriteRule ^(Controller|app|bootstrap|database|logs|Model|bin|Helpers|routes|resources\.php|vendor) - [F,L]
+    RewriteRule ^(Controller|app|bootstrap|database|logs|Model|routes|resources\.php|vendor)(/|$) - [F,L]
 
     # Kalau file/folder tidak ada, lempar ke index.php
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteRule ^ index.php [QSA,L]
+
 </IfModule>

@@ -58,7 +58,8 @@ use Bpjs\Framework\Helpers\Session;
                                     </div>
                                 </div>
                             </div>
-                            <div class="card-footer text-end">
+                            <div class="card-footer text-end d-flex justify-content-between">
+                                <a href="<?= route('tickets')?>" class="btn btn-white ">Back</a>
                                 <button type="submit" class="btn btn-primary" id="submitRequest">Submit</button>
                                 <button class="btn btn-primary" style="display: none;" id="loadingreq" disabled>
                                     <div class="spinner-border me-2" role="status"></div>
@@ -94,7 +95,7 @@ use Bpjs\Framework\Helpers\Session;
                                     </div>
                                 </div>
                                 <div class="mb-3">
-                                    <label class="form-label required">Date Repair</label>
+                                    <label class="form-label required">Date Actual</label>
                                     <div>
                                         <input type="date" name="date_act" id="date_act"
                                             class="form-control">
@@ -108,7 +109,8 @@ use Bpjs\Framework\Helpers\Session;
                                     </div>
                                 </div>
                             </div>
-                            <div class="card-footer text-end">
+                            <div class="card-footer text-end d-flex justify-content-between">
+                                <a href="<?= route('tickets')?>" class="btn btn-white">Back</a>
                                 <button type="submit" class="btn btn-primary" id="submitActual">Submit</button>
                                 <button class="btn btn-primary" style="display: none;" id="loadingact" disabled>
                                     <div class="spinner-border me-2" role="status"></div>
@@ -132,11 +134,133 @@ use Bpjs\Framework\Helpers\Session;
         </div>
     </div>
 </div>
+<div class="modal modal-blur fade" id="modalEditReq" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <form id="formeditdetailreq" action="" enctype="multipart/form-data" method="post">
+                    <?= csrf()?>
+                    <div class="modal-header">
+                        <h5 class="modal-title">Update Detail</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-lg-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Detail Item</label>
+                                    <input type="hidden" name="hash" id="uhash">
+                                    <input type="text" name="detail_item" id="udetail_item" class="form-control">
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Repair Requirement</label>
+                                    <textarea name="repair_req" id="urepair_req" class="form-control"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-lg-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Date Repair</label>
+                                    <input type="date" name="date_repair" id="udate_repair" class="form-control">
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Repair By</label>
+                                    <input type="text" readonly name="repair_by" id="urepair_by"
+                                            value="<?= Session::user()->name ?>" class="form-control">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" id="editdetailreq" class="btn btn-primary ms-auto">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24"
+                                viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+                                stroke-linecap="round" stroke-linejoin="round">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                <path d="M12 5l0 14" />
+                                <path d="M5 12l14 0" />
+                            </svg>
+                            Update Detail Req
+                        </button>
+                        <button class="btn btn-primary ms-auto" style="display: none;" id="loadingeditreq" disabled>
+                            <div class="spinner-border me-2" role="status"></div>
+                            <strong>Loading...</strong>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+<div class="modal modal-blur fade" id="modalEditAct" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <form id="formeditdetailact" action="" enctype="multipart/form-data" method="post">
+                    <?= csrf()?>
+                    <div class="modal-header">
+                        <h5 class="modal-title">Update Detail</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-lg-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Actual Repair</label>
+                                     <input type="hidden" name="hashact" id="uhashact">
+                                    <input type="text" name="act_repair" id="uact_repair" class="form-control">
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Date Actual</label>
+                                    <input type="date" name="date_act" id="udate_act"
+                                            class="form-control">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-lg-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Act By</label>
+                                    <input type="text" readonly name="act_by" id="uact_by"
+                                            value="<?= Session::user()->name ?>" class="form-control">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" id="editdetailact" class="btn btn-primary ms-auto">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24"
+                                viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+                                stroke-linecap="round" stroke-linejoin="round">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                <path d="M12 5l0 14" />
+                                <path d="M5 12l14 0" />
+                            </svg>
+                            Update Detail Req
+                        </button>
+                        <button class="btn btn-primary ms-auto" style="display: none;" id="loadingeditact" disabled>
+                            <div class="spinner-border me-2" role="status"></div>
+                            <strong>Loading...</strong>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 <script>
     var urlReqRepair = '<?= route('detail.ticket.req')?>'
     var urlActRepair = '<?= route('detail.ticket.act')?>'
     var getReqRepair = '<?= url('get/detail')?>'
     var getActRepair = '<?= url('get/detailact')?>'
+    var urlUpdateReq = '<?= route('detail.request.update')?>'
+    var urlDeleteReq = '<?= url('detail/request')?>'
+    var urlUpdateAct = '<?= route('detail.actual.update')?>'
+    var urlDeleteAct = '<?= url('detail/actual')?>'
     var hash = '<?= $id?>'
+    var csrfToken = '<?= csrfHeader()?>'
 </script>
 <script src="<?= asset_v('js/detailticket.js')?>"></script>

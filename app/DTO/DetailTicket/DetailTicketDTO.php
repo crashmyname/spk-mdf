@@ -3,6 +3,7 @@
 namespace App\DTO\DetailTicket;
 
 use App\Models\DetailTicket;
+use Bpjs\Framework\Helpers\Crypto;
 
 final class DetailTicketDTO
 {
@@ -13,10 +14,6 @@ final class DetailTicketDTO
         public ?string $date_repair = null,
         public ?string $repair_by = null,
         public ?string $total_hours_plan = null,
-        public ?string $act_repair = null,
-        public ?string $date_act = null,
-        public ?string $act_by = null,
-        public ?string $total_hours_act = null,
     ){}
 
     public static function ResponseDTO(object $detail)
@@ -27,10 +24,6 @@ final class DetailTicketDTO
             $detail->date_repair,
             $detail->repair_by,
             $detail->total_hours_plan,
-            $detail->act_repair,
-            $detail->date_act,
-            $detail->act_by,
-            $detail->total_hours_act,
         );
     }
 
@@ -44,7 +37,9 @@ final class DetailTicketDTO
         $result = [];
 
         foreach ($details as $item) {
-            $result[] = self::ResponseDTO($item)->toArray();
+            $row = self::ResponseDTO($item)->toArray();
+            $row['hash'] = Crypto::encrypt($item->detail_id);
+            $result[] = $row;
         }
 
         return $result;

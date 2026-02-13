@@ -1,6 +1,7 @@
 <?php
 
 use App\Controllers\ApiController;
+use App\Controllers\ApprovalController;
 use App\Controllers\AuthController;
 use App\Controllers\DetailTicketController;
 use App\Controllers\HomeController;
@@ -49,6 +50,13 @@ Route::group([AuthMiddleware::class], function(){
     Route::post('/detail/ticket/act',[TicketController::class,'addDetailActual'])->name('detail.ticket.act');
     Route::get('/get/detail/{id}',[DetailTicketController::class,'getDetail'])->name('detail.ticket.get');
     Route::get('/get/detailact/{id}',[DetailTicketController::class,'getDetailAct'])->name('detailact.ticket.get');
+    Route::post('/detail/request',[DetailTicketController::class,'updateReq'])->name('detail.request.update');
+    Route::delete('/detail/request/{id}',[DetailTicketController::class,'destroyReq'])->name('detail.request.delete');
+    Route::post('/detail/actual',[DetailTicketController::class,'updateAct'])->name('detail.actual.update');
+    Route::delete('/detail/actual/{id}',[DetailTicketController::class,'destroyAct'])->name('detail.actual.delete');
+
+    // Apporval
+    Route::get('/ticket-approval',[ApprovalController::class,'index'])->name('appr.index');
     // API GET Employee
     Route::post('/emp',[ApiController::class, 'getEmployee'])->name('getemp');
 });

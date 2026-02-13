@@ -2,6 +2,8 @@
 
 namespace App\DTO\DetailTicket;
 
+use Bpjs\Framework\Helpers\Crypto;
+
 final class DetailActDTO
 {
     // DTO here
@@ -32,7 +34,9 @@ final class DetailActDTO
         $result = [];
 
         foreach ($details as $item) {
-            $result[] = self::ResponseDTO($item)->toArray();
+            $row = self::ResponseDTO($item)->toArray();
+            $row['hashAct'] = Crypto::encrypt($item->detail_act_id);
+            $result[] = $row;
         }
 
         return $result;

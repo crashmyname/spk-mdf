@@ -52,13 +52,42 @@ class DetailTicketController extends BaseController
         // Simpan resource baru
     }
 
-    public function update(Request $request, $id)
+    public function updateReq(Request $request, DetailTicketService $service)
     {
-        // Update resource dengan ID: $id
+        $result = $service->updateReq($request->all());
+        return Response::json([
+            'status' => $result['status'],
+            'message' => $result['message'] ?? 'success',
+            'data' => $result['data'] ?? null,
+        ],$result['status']);
     }
 
-    public function destroy($id)
+    public function destroyReq($id, DetailTicketService $service)
     {
-        // Hapus resource dengan ID: $id
+        $result = $service->destroyReq($id);
+        return Response::json([
+            'status' => $result['status'],
+            'message' => $result['message'] ?? 'success',
+            'data' => $result['data'] ?? null,
+        ],$result['status']);
+    }
+    public function updateAct(Request $request, DetailTicketService $service)
+    {
+        $result = $service->updateAct($request->all());
+        return Response::json([
+            'status' => $result['status'],
+            'message' => $result['message'] ?? 'success',
+            'data' => $result['data'] ?? null,
+        ],$result['status']);
+    }
+
+    public function destroyAct($id, DetailTicketService $service)
+    {
+        $result = $service->destroyAct($id);
+        return Response::json([
+            'status' => $result['status'],
+            'message' => $result['message'] ?? 'success',
+            'data' => $result['data'] ?? null,
+        ],$result['status']);
     }
 }
